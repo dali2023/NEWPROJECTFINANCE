@@ -1,0 +1,22 @@
+Accès base de données opérationnel. J'ai démarré Adminer (profil tools, il n'était pas lancé) et vérifié qu'il répond en 200.
+
+Interface web (Adminer)
+
+URL : http://localhost:8081
+Serveur : postgres (laisser tel quel, résolution interne Docker)
+Utilisateur : one_erp
+Mot de passe : one_erp_dev
+Base : one_erp_finance
+Connexion directe (DBeaver, pgAdmin, DataGrip, psql…)
+
+Hôte : localhost
+Port : 5433
+Base : one_erp_finance
+Base de test : one_erp_finance_test
+Utilisateur : one_erp
+Mot de passe : one_erp_dev
+Version : PostgreSQL 16, encodage utf8
+DSN applicatif (app/.env, réseau interne Docker, port 5432) :
+
+auth//
+Demo accounts: admin, direction, finance, commercial, chefprojet / Demo1234!
