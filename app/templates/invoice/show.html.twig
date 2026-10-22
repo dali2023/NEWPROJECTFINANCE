@@ -14,6 +14,7 @@
             </div>
         </div>
         <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' %}
             {% if invoice.status.editable and can('invoice.manage') %}
                 <a class="btn" href="{{ path('app_invoice_edit', {id: invoice.idString}) }}">Modifier</a>
             {% endif %}

@@ -140,12 +140,17 @@
                             {% for role in app.user.assignedRoles %}{{ role.label }}{% if not loop.last %} · {% endif %}{% endfor %}
                         </div>
                     </div>
+                    <button type="button" class="btn btn--ghost btn--sm no-print" data-print>Imprimer</button>
                     <a class="btn btn--ghost btn--sm" href="{{ path('app_logout') }}">Déconnexion</a>
                 </div>
             {% endif %}
         </header>
 
         <main class="content">
+            <div class="print-only print-head">
+                <div class="print-head__brand">ONE ERP · Finance &amp; Project Control</div>
+                <div class="print-head__meta">{{ 'now'|date('d/m/Y H:i') }}</div>
+            </div>
             {% include 'partials/_flash.html.twig' %}
             {% block body %}{% endblock %}
         </main>

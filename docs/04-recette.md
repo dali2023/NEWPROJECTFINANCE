@@ -28,8 +28,8 @@ Légende :
 
 | Indicateur | Résultat |
 |---|---|
-| Tests automatisés | **41 tests, 189 assertions — OK** |
-| Scénarios REC entièrement réussis | 24 (8 du socle + REC-021 à REC-036) |
+| Tests automatisés | **77 tests, 307 assertions — OK** |
+| Scénarios REC entièrement réussis | 25 (8 du socle + REC-021 à REC-037) |
 | Scénarios REC partiels | 7 |
 | Scénarios REC en attente de phase ultérieure | 5 |
 | Anomalies bloquantes | 0 |
@@ -63,7 +63,7 @@ docker compose exec -u application php php bin/phpunit
 | REC-013 | Annuler une facture | Facture exclue des créances actives | 🟡 | Annulation réservée aux brouillons ; les factures validées doivent passer par un avoir |
 | REC-014 | Consulter un exercice clôturé | Utilisateur non autorisé ne peut pas modifier | 🟡 | `FiscalYearTest` : clôture, réouverture motivée, audit ; garde à généraliser aux écritures financières |
 | REC-015 | Consulter un projet non autorisé | Accès refusé | ✅ | `ProjectAccessTest::testUserCannotViewProjectOutsideHisScope` |
-| REC-016 | Exporter un rapport | Fichier identique aux totaux de l'écran filtré | ⏳ | Exports PDF/XLSX non livrés |
+| REC-016 | Exporter un rapport | Fichier identique aux totaux de l'écran filtré | ⏳ | Exports Excel et impression livrés ; export PDF à venir |
 | REC-017 | Répartir les bénéfices | Simulation sur la base de répartition définie | ⏳ | Module résultat/distribution non livré |
 | REC-018 | Consulter l'audit | Opération et auteur retrouvés | ✅ | `AccessDeniedAuditTest`, `RolePermissionAuditTest`, `FiscalYearTest` |
 | REC-019 | Restaurer une sauvegarde | Données et justificatifs récupérables | 🟡 | Procédure documentée (`07-sauvegarde-restauration.md`) ; exercice de reprise à planifier |
@@ -80,7 +80,7 @@ docker compose exec -u application php php bin/phpunit
 | E — Résultat d'un projet | 40 000 − 18 000 − 4 000 = 18 000 ; marge directe 22 000 | 🟡 | `MoneyTest` ; charges et facturation livrées, reporting de résultat à compléter |
 | F — Contrôle des permissions | Accès refusé et journalisé | ✅ | `AccessDeniedAuditTest` + `ProjectAccessTest` |
 
-## 5. Tests du module 15 et des finances (REC-021 à REC-036)
+## 5. Tests du module 15 et des finances (REC-021 à REC-037)
 
 | ID | Scénario | Statut | Preuve et vérification |
 |---|---|---|---|
@@ -100,6 +100,7 @@ docker compose exec -u application php php bin/phpunit
 | REC-034 | Délais d'alerte paramétrables | ✅ | `testRec034…` — contrat à 40 jours : alertes J-90 et J-60, pas J-30 ni J-7 |
 | REC-035 | Idempotence des alertes | ✅ | `testRec035…` — seconde génération : 0 alerte, total inchangé |
 | REC-036 | Facturation à réaliser | ✅ | `testRec036…` — prêtes `15000.000`, en retard `10000.000`, bloquées exclues |
+| REC-037 | Exports Excel et impression | ✅ | `SpreadsheetExporterTest` — classeur `.xlsx` valide, totaux et formats ; `ExportPrintTest` — 15 routes d'export en `.xlsx` et actions d'impression présentes |
 
 ### 5.1. Vérifications complémentaires des finances
 

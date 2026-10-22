@@ -10,6 +10,7 @@
             <div class="page-head__subtitle">{{ partner.code }} · {{ partner.partnerType.label }}</div>
         </div>
         <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' %}
             {% if can('partner.manage') %}
                 <a class="btn" href="{{ path('app_partner_edit', {id: partner.idString}) }}">Modifier la fiche</a>
                 <a class="btn btn--primary" href="{{ path('app_partner_transaction_new', {id: partner.idString}) }}">Nouvelle opération</a>

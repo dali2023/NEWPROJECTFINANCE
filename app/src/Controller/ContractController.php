@@ -45,6 +45,8 @@ use App\Service\ContractDateCalculator;
 use App\Service\ContractNotificationService;
 use App\Service\ContractStatusResolver;
 use App\Service\DocumentStorage;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use App\Service\MaintenanceScheduleService;
 use App\Service\ReferenceGenerator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -107,6 +109,77 @@ final class ContractController extends AbstractController
             'expiring_30' => $contractRepository->countExpiringWithin(30),
             'renewals_to_prepare' => $contractRepository->countRenewalsToPrepare(),
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    public function export(
+        Request $request,
+        ContractRepository $contractRepository,
+        ClientRepository $clientRepository,
+        ProjectRepository $projectRepository,
+        UserRepository $userRepository,
+        PermissionChecker $permissionChecker,
+        SpreadsheetExporter $exporter,
+    ): Response {
+        if (!$this->isGranted('contract.view_all') && !$this->isGranted('contract.view_own')) {
+            throw $this->createAccessDeniedException('Vous n’êtes pas autorisé à exporter les contrats.');
+        }
+
+        $scope = $permissionChecker->contractScope($this->getUser());
+        $filters = [
+            'term' => $request->query->getString('q') ?: null,
+            'client' => $this->findByUuid($clientRepository, $request->query->getString('client')),
+            'type' => ContractType::tryFrom($request->query->getString('type')),
+            'project' => $this->findByUuid($projectRepository, $request->query->getString('projet')),
+            'responsible' => $this->findByUuid($userRepository, $request->query->getString('responsable')),
+            'status' => ContractStatus::tryFrom($request->query->getString('statut')),
+            'expiryWithin' => $request->query->getInt('echeance') ?: null,
+            'onlyFor' => $scope,
+        ];
+
+        $result = $contractRepository->search($filters, 1, 10000);
+
+        $rows = [];
+        foreach ($result['items'] as $contract) {
+            $rows[] = [
+                $contract->getReference(),
+                $contract->getTitle(),
+                $contract->getClient()?->getName(),
+                $contract->getContractType()->label(),
+                $contract->getProject()?->getCode(),
+                $contract->getResponsible()?->getFullName(),
+                $contract->getEffectiveEndDate(),
+                $contract->getRenewalPreparationDate(),
+                $contract->getStatus()->label(),
+                $contract->getAmountHt(),
+                $contract->getAmountTtc(),
+                $contract->getInvoicedTotalHt(),
+            ];
+        }
+
+        $context = [];
+        if (null !== $filters['term']) {
+            $context[] = 'Recherche : '.$filters['term'];
+        }
+        if (null !== $scope) {
+            $context[] = 'Périmètre : contrats dont vous êtes responsable';
+        }
+        $context[] = $result['total'].' contrat(s)';
+
+        return $exporter->download('contrats', 'Registre des contrats', [
+            Column::text('Référence', 18),
+            Column::text('Intitulé', 34),
+            Column::text('Client', 24),
+            Column::text('Type', 18),
+            Column::text('Projet', 14),
+            Column::text('Responsable', 20),
+            Column::date('Fin contractuelle'),
+            Column::date('Préparation renouvellement'),
+            Column::text('Statut', 16),
+            Column::money('Montant HT'),
+            Column::money('Montant TTC'),
+            Column::money('Facturé HT'),
+        ], $rows, $context);
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]

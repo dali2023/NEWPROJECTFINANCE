@@ -164,7 +164,32 @@ l'action `deny` et le résultat `denied`, y compris le chemin demandé.
 - Les listes sont filtrées côté serveur selon le périmètre de l'utilisateur
   (`project.view_all` ou `project.view_own`).
 
-## 7. Tests
+## 7. Exports et impression
+
+- `App\Service\Export\SpreadsheetExporter` génère les classeurs `.xlsx` avec
+  PhpSpreadsheet. Il centralise le titre, le contexte et la date, les en-têtes
+  figés et filtrables, les largeurs de colonnes, les formats numériques, la
+  ligne de totaux (calculée avec `bcadd`) et la mise en page A4.
+- `App\Service\Export\Column` décrit chaque colonne (`text`, `money`, `rate`,
+  `decimal`, `integer`, `date`, `dateTime`, `boolean`). Les montants restent des
+  nombres Excel au format `#,##0.000` ; les références sont écrites comme texte
+  pour préserver les zéros de tête.
+- Chaque contrôleur de liste expose une route `..._export` qui rejoue les mêmes
+  filtres que `index()` et appelle `download()`. Le contrôleur reste responsable
+  du contrôle de permission et du périmètre (projets et contrats).
+- Le classeur est écrit dans un fichier temporaire puis renvoyé dans une
+  `Response` (`Content-Disposition: attachment`), ce qui facilite les tests et
+  évite les dépendances à `php://output`.
+- Les boutons **Exporter Excel** et **Imprimer** proviennent de
+  `templates/partials/_page_actions.html.twig` ; le bouton d'impression est
+  aussi présent dans le bandeau supérieur. `app.js` traite `[data-print]`.
+- Le rendu papier est défini par le bloc `@media print` d'`app.css` :
+  navigation et filtres masqués, en-têtes de tableau répétés, lignes non
+  coupées, en-tête société/date injecté par `base.html.twig`.
+- Les exports sont plafonnés à 10 000 lignes par requête ; au-delà, affiner les
+  filtres.
+
+## 8. Tests
 
 ```bash
 docker compose exec -u application php php bin/phpunit
@@ -183,15 +208,19 @@ docker compose exec -u application php php bin/phpunit
   maintenance, alertes).
 - `FinanceAcceptanceTest` : REC-025 à REC-027, paiement de charge après
   approbation et règlement d'une opération d'associé.
+- `SpreadsheetExporterTest` : validité du classeur `.xlsx`, en-têtes, totaux et
+  formats.
+- `ExportPrintTest` : les quinze routes d'export répondent en `.xlsx` et les
+  actions d'export/impression sont présentes.
 
-Résultat de référence : **41 tests, 189 assertions — OK**.
+Résultat de référence : **77 tests, 307 assertions — OK**.
 
 `DatabaseTestCase` ouvre une transaction PostgreSQL dans `setUp()` et l'annule
 dans `tearDown()`. Le noyau n'est pas redémarré entre les requêtes
 (`disableReboot()`), afin que les écritures HTTP partagent la connexion du test.
 La base de test reste ainsi propre d'une exécution à l'autre.
 
-## 8. Configuration et exploitation
+## 9. Configuration et exploitation
 
 - `app/.env` : valeurs de développement (commité, sans secret de production).
 - `app/.env.test` : base dédiée, `MAILER_DSN=null://null`.
@@ -215,6 +244,8 @@ La base de test reste ainsi propre d'une exécution à l'autre.
   à une remise à zéro complète.
 - Nginx applique des délais FastCGI de 120 s pour absorber le premier appel à
   froid (compilation du cache Symfony).
+- Les exports Excel nécessitent l'extension `zip` (présente dans l'image PHP) et
+  la dépendance `phpoffice/phpspreadsheet` déclarée dans `app/composer.json`.
 
 Commandes de contrôle :
 
@@ -225,7 +256,7 @@ docker compose exec -u application php php bin/console doctrine:schema:validate
 docker compose exec -u application php php bin/console doctrine:migrations:status
 ```
 
-## 9. Points d'extension
+## 10. Points d'extension
 
 Les services livrés (`ContractBillingService`, `ContractNotificationService`,
 `MaintenanceScheduleService`, `InvoiceService`, `ExpenseService`,
@@ -244,12 +275,13 @@ Points restant à raccorder :
   financière, en plus des contrôles d'administration.
 - **Répartition indirecte, immobilisations, résultat annuel et distribution** :
   réutiliser `Money::allocate()` et les mêmes règles d'audit.
-- **Exports PDF/XLSX** : réutiliser les filtres et services de calcul des écrans
-  afin de garantir l'identité des totaux (REC-016).
+- **Exports PDF** : réutiliser les filtres et services de calcul des écrans afin
+  de garantir l'identité des totaux (REC-016) ; les exports Excel et
+  l'impression sont déjà livrés.
 - **Envoi de courriels** : brancher le transport Mailer sur les notifications
   existantes, sans changer leur clé d'idempotence.
 
-## 10. Dette technique connue
+## 11. Dette technique connue
 
 1. Pas de pipeline CI : les contrôles sont exécutés manuellement via Docker.
 2. Pas d'analyse statique (PHPStan) ni de formateur automatique à ce stade.

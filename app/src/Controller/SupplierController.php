@@ -8,6 +8,8 @@ use App\Entity\Supplier;
 use App\Form\SupplierFormType;
 use App\Repository\SupplierRepository;
 use App\Service\AuditLogger;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +35,48 @@ final class SupplierController extends AbstractController
             'term' => $term,
             'active_only' => $activeOnly,
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    public function export(Request $request, SupplierRepository $supplierRepository, SpreadsheetExporter $exporter): Response
+    {
+        $term = $request->query->getString('q') ?: null;
+        $activeOnly = $request->query->has('actifs') ? true : null;
+        $result = $supplierRepository->search($term, $activeOnly, 1, 10000);
+
+        $rows = [];
+        foreach ($result['items'] as $supplier) {
+            $rows[] = [
+                $supplier->getCode(),
+                $supplier->getName(),
+                $supplier->getServiceCategory(),
+                $supplier->getEmail(),
+                $supplier->getPhone(),
+                $supplier->getCity(),
+                $supplier->getPaymentTermsDays(),
+                $supplier->isActive() ? 'Actif' : 'Inactif',
+            ];
+        }
+
+        $context = [];
+        if (null !== $term) {
+            $context[] = 'Recherche : '.$term;
+        }
+        if ($activeOnly) {
+            $context[] = 'Fournisseurs actifs seulement';
+        }
+        $context[] = $result['total'].' fournisseur(s)';
+
+        return $exporter->download('fournisseurs', 'Liste des fournisseurs', [
+            Column::text('Code', 14),
+            Column::text('Raison sociale', 32),
+            Column::text('Catégorie', 20),
+            Column::text('E-mail', 28),
+            Column::text('Téléphone', 16),
+            Column::text('Ville', 16),
+            Column::integer('Délai (jours)'),
+            Column::text('Statut', 10),
+        ], $rows, $context);
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]

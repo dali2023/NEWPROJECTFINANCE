@@ -15,6 +15,8 @@ use App\Repository\ProjectRepository;
 use App\Repository\SupplierRepository;
 use App\Service\AuditLogger;
 use App\Service\ExpenseService;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use App\Service\ReferenceGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -58,6 +60,65 @@ final class ExpenseController extends AbstractController
             'approved_total' => $expenseRepository->sumApproved(),
             'pending_total' => $expenseRepository->sumPending(),
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    #[IsGranted('expense.view')]
+    public function export(
+        Request $request,
+        ExpenseRepository $expenseRepository,
+        SupplierRepository $supplierRepository,
+        ProjectRepository $projectRepository,
+        SpreadsheetExporter $exporter,
+    ): Response {
+        $filters = [
+            'term' => $request->query->getString('q') ?: null,
+            'supplier' => $this->findByUuid($supplierRepository, $request->query->getString('fournisseur')),
+            'project' => $this->findByUuid($projectRepository, $request->query->getString('projet')),
+            'status' => ExpenseStatus::tryFrom($request->query->getString('statut')),
+        ];
+
+        $result = $expenseRepository->search($filters, 1, 10000);
+
+        $rows = [];
+        foreach ($result['items'] as $expense) {
+            $rows[] = [
+                $expense->getReference(),
+                $expense->getLabel(),
+                $expense->getSupplier()?->getName(),
+                $expense->getProject()?->getCode(),
+                $expense->getCategory()->label(),
+                $expense->getExpenseDate(),
+                $expense->getDueDate(),
+                $expense->getStatus()->label(),
+                $expense->getAmountHt(),
+                $expense->getVatAmount(),
+                $expense->getAmountTtc(),
+                $expense->getBalance(),
+            ];
+        }
+
+        $context = [];
+        if (null !== $filters['term']) {
+            $context[] = 'Recherche : '.$filters['term'];
+        }
+        $context[] = $result['total'].' charge(s)';
+        $context[] = 'Total approuvé : '.$expenseRepository->sumApproved().' TND';
+
+        return $exporter->download('charges', 'Charges et dépenses', [
+            Column::text('Référence', 18),
+            Column::text('Libellé', 32),
+            Column::text('Fournisseur', 24),
+            Column::text('Projet', 14),
+            Column::text('Catégorie', 20),
+            Column::date('Date'),
+            Column::date('Échéance'),
+            Column::text('Statut', 16),
+            Column::money('HT'),
+            Column::money('TVA'),
+            Column::money('TTC'),
+            Column::money('Reste'),
+        ], $rows, $context);
     }
 
     #[Route('/nouvelle', name: 'new', methods: ['GET', 'POST'])]

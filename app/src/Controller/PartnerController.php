@@ -15,6 +15,8 @@ use App\Repository\BankAccountRepository;
 use App\Repository\PartnerRepository;
 use App\Repository\PartnerTransactionRepository;
 use App\Service\AuditLogger;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use App\Service\PartnerService;
 use App\Service\ReferenceGenerator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -38,6 +40,45 @@ final class PartnerController extends AbstractController
             'partners' => $partnerRepository->findBy([], ['name' => 'ASC']),
             'result' => $transactionRepository->search(null, null, 1, 10),
             'total_ownership' => $partnerRepository->totalOwnership(),
+        ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    #[IsGranted('partner.view')]
+    public function export(PartnerRepository $partnerRepository, SpreadsheetExporter $exporter): Response
+    {
+        $partners = $partnerRepository->findBy([], ['name' => 'ASC']);
+
+        $rows = [];
+        foreach ($partners as $partner) {
+            $rows[] = [
+                $partner->getCode(),
+                $partner->getName(),
+                $partner->getPartnerType()->label(),
+                $partner->getOwnershipPercent(),
+                $partner->getCapitalContributed(),
+                $partner->getCurrentAccountBalance(),
+                $partner->getDividendsReceived(),
+                $partner->getEmail(),
+                $partner->getPhone(),
+                $partner->isActive() ? 'Actif' : 'Inactif',
+            ];
+        }
+
+        return $exporter->download('associes', 'Actionnariat et comptes associés', [
+            Column::text('Code', 12),
+            Column::text('Associé', 28),
+            Column::text('Forme', 16),
+            Column::rate('Part du capital', 14),
+            Column::money('Capital apporté'),
+            Column::money('Compte courant'),
+            Column::money('Dividendes reçus'),
+            Column::text('E-mail', 26),
+            Column::text('Téléphone', 16),
+            Column::text('Statut', 10),
+        ], $rows, [
+            sprintf('%d associé(s)', \count($partners)),
+            'Part du capital renseignée : '.$partnerRepository->totalOwnership().' %',
         ]);
     }
 

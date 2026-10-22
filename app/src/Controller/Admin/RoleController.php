@@ -9,6 +9,8 @@ use App\Form\RolePermissionsFormType;
 use App\Repository\PermissionRepository;
 use App\Repository\RoleRepository;
 use App\Service\AuditLogger;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -37,6 +39,33 @@ final class RoleController extends AbstractController
             'user_counts' => $userCounts,
             'permissions_count' => \count($permissionRepository->findAll()),
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    public function export(RoleRepository $roleRepository, SpreadsheetExporter $exporter): Response
+    {
+        $roles = $roleRepository->findAllOrdered();
+
+        $rows = [];
+        foreach ($roles as $role) {
+            $rows[] = [
+                $role->getLabel(),
+                $role->getCode(),
+                $role->getDescription(),
+                \count($role->getPermissions()),
+                \count($role->getUsers()),
+                $role->isSystem() ? 'Système' : 'Personnalisé',
+            ];
+        }
+
+        return $exporter->download('roles', 'Rôles et permissions', [
+            Column::text('Rôle', 26),
+            Column::text('Code technique', 22),
+            Column::text('Description', 44),
+            Column::integer('Permissions'),
+            Column::integer('Utilisateurs'),
+            Column::text('Type', 14),
+        ], $rows, [sprintf('%d rôle(s)', \count($roles))]);
     }
 
     #[Route('/{id}', name: 'edit', methods: ['GET', 'POST'])]

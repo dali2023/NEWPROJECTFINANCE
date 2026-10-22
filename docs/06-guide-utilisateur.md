@@ -36,8 +36,8 @@ Le bandeau latéral regroupe :
 - **Administration** : exercices, types de projet, utilisateurs, rôles, audit,
   selon vos permissions.
 
-Le bandeau supérieur affiche votre nom et le bouton **Déconnexion**. Les
-montants sont exprimés en dinars tunisiens (TND).
+Le bandeau supérieur affiche votre nom, le bouton **Imprimer** et le bouton
+**Déconnexion**. Les montants sont exprimés en dinars tunisiens (TND).
 
 ## 3. Tableau de bord
 
@@ -298,7 +298,41 @@ l'horodatage, l'adresse IP et, le cas échéant, les valeurs avant/après.
 
 Les refus d'accès apparaissent avec l'action `deny` et le résultat `denied`.
 
-## 9. Bonnes pratiques
+## 9. Exporter et imprimer
+
+Chaque Ǹcran de liste (clients, fournisseurs, projets, contrats, facturation,
+alertes, factures, charges, trǸsorerie, associǸs, utilisateurs, r��les,
+exercices, types de projet, audit) propose deux actions en haut �� droite :
+
+- **Exporter Excel** tǸlǸcharge un vǸritable classeur `.xlsx` contenant les
+  donnǸes filtrǸes de la liste.
+- **Imprimer** ouvre la bo��te de dialogue d'impression du navigateur. Le bouton
+  **Imprimer** du bandeau supǸrieur est Ǹgalement disponible sur les fiches
+  dǸtaillǸes.
+
+### 9.1. Contenu d'un export Excel
+
+Le classeur reprend le titre de l'Ǹcran, les filtres actifs et la date
+d'Ǹdition. La ligne de titres est figǸe et filtrable, les colonnes sont
+dimensionnǸes et les montants sont de vrais nombres au format `# ##0,000` :
+ils peuvent Ǧtre triǸs et additionnǸs dans Excel. Une ligne **TOTAL** est ajoutǸe
+pour les colonnes de montants. Les dates sont au format `jj/mm/aaaa` et les
+rǸfǸrences restent du texte (les zǸros de tǦte sont conservǸs).
+
+L'export respecte les filtres affichǸs et votre pǸrim��tre de droits : un
+utilisateur limitǸ �� ses propres projets ou contrats n'exporte que ceux-ci.
+Les listes sont plafonnǸes �� 10 000 lignes par export ; affinez les filtres
+pour les grands volumes.
+
+### 9.2. Rendu de l'impression
+
+L'impression masque la navigation, les filtres et les boutons d'action. Les
+tableaux conservent leur en-tǦte sur chaque page, les lignes ne sont pas
+coupǸes et la mise en page est calibrǸe pour du A4. Pour les exports Excel, la
+mise en page du classeur est Ǹgalement prǸparǸe (A4, paysage au-del�� de six
+colonnes, ajustement �� la largeur, en-tǦte rǸpǸtǸ).
+
+## 10. Bonnes pratiques
 
 - Vérifier le client et le type avant de créer un projet.
 - Ne pas utiliser le champ « commentaires » pour des données sensibles : le
@@ -311,7 +345,7 @@ Les refus d'accès apparaissent avec l'action `deny` et le résultat `denied`.
 - Clôturer l'exercice après validation des opérations de l'année.
 - Signaler immédiatement toute anomalie de montant ou d'accès.
 
-## 10. Montants et arrondis
+## 11. Montants et arrondis
 
 - Les montants sont stockés en décimal exact (échelle 3, soit le millime).
 - Le taux de TVA est saisi en pourcentage (ex. `19`).
@@ -321,7 +355,7 @@ Les refus d'accès apparaissent avec l'action `deny` et le résultat `denied`.
 En cas d'écart apparent, vérifier la saisie du taux et des montants HT avant de
 contacter le support.
 
-## 11. Problèmes fréquents
+## 12. Problèmes fréquents
 
 | Symptôme | Cause probable | Action |
 |---|---|---|
@@ -336,7 +370,7 @@ contacter le support.
 | Règlement d'associé refusé | Opération non validée | Valider l'opération avant le règlement |
 | Aucune alerte générée | Dates ou responsable absents, ou délai non atteint | Compléter la fiche et vérifier le paramétrage |
 
-## 12. Support
+## 13. Support
 
 Fournir au support : l'identifiant utilisé, l'écran concerné, l'heure, le
 message exact et, si possible, la référence du projet ou du client. Les

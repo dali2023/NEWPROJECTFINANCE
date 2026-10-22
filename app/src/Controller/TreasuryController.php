@@ -13,6 +13,8 @@ use App\Form\CashMovementFormType;
 use App\Repository\BankAccountRepository;
 use App\Repository\CashMovementRepository;
 use App\Service\AuditLogger;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use App\Service\ReferenceGenerator;
 use App\Service\TreasuryService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -57,6 +59,68 @@ final class TreasuryController extends AbstractController
             'month_inflows' => $treasuryService->inflows($from, $to),
             'month_outflows' => $treasuryService->outflows($from, $to),
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    #[IsGranted('treasury.view')]
+    public function export(
+        Request $request,
+        BankAccountRepository $accountRepository,
+        CashMovementRepository $movementRepository,
+        SpreadsheetExporter $exporter,
+    ): Response {
+        $filters = [
+            'term' => $request->query->getString('q') ?: null,
+            'account' => $this->findByUuid($accountRepository, $request->query->getString('compte')),
+            'direction' => TreasuryDirection::tryFrom($request->query->getString('sens')),
+            'type' => TreasuryMovementType::tryFrom($request->query->getString('origine')),
+        ];
+
+        $result = $movementRepository->search($filters, 1, 10000);
+
+        $rows = [];
+        foreach ($result['items'] as $movement) {
+            $rows[] = [
+                $movement->getReference(),
+                $movement->getMovementDate(),
+                $movement->getBankAccount()?->getName(),
+                $movement->getDirection()->label(),
+                $movement->getMovementType()->label(),
+                $movement->getLabel(),
+                $movement->getAmount(),
+                $movement->isReconciled() ? 'Oui' : 'Non',
+                $movement->getReconciledAt(),
+                $movement->getSourceType(),
+            ];
+        }
+
+        $context = [];
+        if (null !== $filters['term']) {
+            $context[] = 'Recherche : '.$filters['term'];
+        }
+        if (null !== $filters['account']) {
+            $context[] = 'Compte : '.$filters['account']->getName();
+        }
+        if (null !== $filters['direction']) {
+            $context[] = 'Sens : '.$filters['direction']->label();
+        }
+        if (null !== $filters['type']) {
+            $context[] = 'Origine : '.$filters['type']->label();
+        }
+        $context[] = $result['total'].' mouvement(s)';
+
+        return $exporter->download('mouvements-tresorerie', 'Mouvements de trésorerie', [
+            Column::text('Référence', 18),
+            Column::date('Date'),
+            Column::text('Compte', 24),
+            Column::text('Sens', 12),
+            Column::text('Origine', 20),
+            Column::text('Libellé', 32),
+            Column::money('Montant', 15, false),
+            Column::text('Rapproché', 10),
+            Column::dateTime('Rapprochement'),
+            Column::text('Source', 16),
+        ], $rows, $context);
     }
 
     #[Route('/comptes/nouveau', name: 'account_new', methods: ['GET', 'POST'])]

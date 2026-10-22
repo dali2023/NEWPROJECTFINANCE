@@ -14,6 +14,8 @@ use App\Security\PermissionChecker;
 use App\Security\Voter\ContractVoter;
 use App\Service\AuditLogger;
 use App\Service\ContractBillingService;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use App\Service\InvoiceService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -68,6 +70,77 @@ final class ContractBillingController extends AbstractController
             'forecast_maintenance' => $billingService->forecastMaintenanceRevenue(),
             'scope_limited' => null !== $scope,
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    public function export(
+        Request $request,
+        ContractMilestoneRepository $milestoneRepository,
+        ProjectRepository $projectRepository,
+        PermissionChecker $permissionChecker,
+        SpreadsheetExporter $exporter,
+    ): Response {
+        if (!$this->isGranted('contract.view_all') && !$this->isGranted('contract.view_own')) {
+            throw $this->createAccessDeniedException('Vous n’êtes pas autorisé à exporter la facturation contractuelle.');
+        }
+
+        $scope = $permissionChecker->contractScope($this->getUser());
+        $filters = [
+            'term' => $request->query->getString('q') ?: null,
+            'project' => $this->findByUuid($projectRepository, $request->query->getString('projet')),
+            'billingStatus' => ContractBillingStatus::tryFrom($request->query->getString('statut')),
+            'readyOnly' => $request->query->getBoolean('pretes') ?: null,
+            'overdueOnly' => $request->query->getBoolean('retard') ?: null,
+            'onlyFor' => $scope,
+        ];
+
+        $result = $milestoneRepository->searchBilling($filters, 1, 10000);
+
+        $rows = [];
+        foreach ($result['items'] as $milestone) {
+            $contract = $milestone->getContract();
+            $rows[] = [
+                $milestone->getReference(),
+                $milestone->getLabel(),
+                $contract?->getReference(),
+                $contract?->getClient()?->getName(),
+                $milestone->getProject()?->getCode(),
+                $milestone->getPlannedDate(),
+                $milestone->getCompletionStatus()->label(),
+                $milestone->getBillingStatus()->label(),
+                $milestone->getAmountHt(),
+                $milestone->getBilledAmountHt(),
+                $milestone->getRemainingToInvoiceHt(),
+                $milestone->isOverdue() ? 'Oui' : 'Non',
+            ];
+        }
+
+        $context = [];
+        if (null !== $filters['term']) {
+            $context[] = 'Recherche : '.$filters['term'];
+        }
+        if ($filters['readyOnly']) {
+            $context[] = 'Échéances prêtes à facturer';
+        }
+        if ($filters['overdueOnly']) {
+            $context[] = 'Échéances en retard';
+        }
+        $context[] = $result['total'].' échéance(s)';
+
+        return $exporter->download('facturation-a-realiser', 'Facturation à réaliser', [
+            Column::text('Échéance', 18),
+            Column::text('Libellé', 30),
+            Column::text('Contrat', 18),
+            Column::text('Client', 24),
+            Column::text('Projet', 14),
+            Column::date('Date prévue'),
+            Column::text('Réalisation', 16),
+            Column::text('Facturation', 22),
+            Column::money('Prévu HT'),
+            Column::money('Facturé HT'),
+            Column::money('Reste HT'),
+            Column::text('En retard', 10),
+        ], $rows, $context);
     }
 
     #[Route('/{milestoneId}/action', name: 'action', methods: ['POST'], requirements: ['milestoneId' => '[0-9a-fA-F-]{36}'])]

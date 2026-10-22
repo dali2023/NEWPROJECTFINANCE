@@ -13,6 +13,7 @@
             </div>
         </div>
         <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' %}
             {% if expense.status.editable and can('expense.manage') %}
                 <a class="btn" href="{{ path('app_expense_edit', {id: expense.idString}) }}">Modifier</a>
             {% endif %}

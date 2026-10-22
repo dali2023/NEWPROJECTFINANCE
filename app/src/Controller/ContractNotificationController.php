@@ -17,6 +17,8 @@ use App\Security\PermissionChecker;
 use App\Security\Voter\ContractVoter;
 use App\Service\AuditLogger;
 use App\Service\ContractNotificationService;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -76,6 +78,78 @@ final class ContractNotificationController extends AbstractController
             'active_count' => $notificationRepository->countActive($scope),
             'scope_limited' => null !== $scope,
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    public function export(
+        Request $request,
+        ContractNotificationRepository $notificationRepository,
+        ContractRepository $contractRepository,
+        UserRepository $userRepository,
+        PermissionChecker $permissionChecker,
+        SpreadsheetExporter $exporter,
+    ): Response {
+        if (!$this->isGranted('contract.view_all') && !$this->isGranted('contract.view_own') && !$this->isGranted('contract.notify')) {
+            throw $this->createAccessDeniedException('Vous n’êtes pas autorisé à exporter les notifications contractuelles.');
+        }
+
+        $scope = $permissionChecker->contractScope($this->getUser());
+        $contract = null;
+        $contractId = $request->query->getString('contrat');
+        if ('' !== $contractId && \Symfony\Component\Uid\Uuid::isValid($contractId)) {
+            $contract = $contractRepository->find($contractId);
+        }
+
+        $filters = [
+            'term' => $request->query->getString('q') ?: null,
+            'type' => ContractNotificationType::tryFrom($request->query->getString('type')),
+            'status' => ContractNotificationStatus::tryFrom($request->query->getString('statut')),
+            'severity' => ContractNotificationSeverity::tryFrom($request->query->getString('gravite')),
+            'recipient' => $this->findUser($userRepository, $request->query->getString('destinataire')),
+            'contract' => $contract,
+            'activeOnly' => !$request->query->getBoolean('historique'),
+            'scopeUser' => null === $contract ? $scope : null,
+        ];
+
+        $result = $notificationRepository->search($filters, 1, 10000);
+
+        $rows = [];
+        foreach ($result['items'] as $notification) {
+            $rows[] = [
+                $notification->getSeverity()->label(),
+                $notification->getNotificationType()->label(),
+                $notification->getTitle(),
+                $notification->getContract()?->getReference(),
+                $notification->getContract()?->getClient()?->getName(),
+                $notification->getEventDate(),
+                $notification->getTriggerDate(),
+                $notification->getAlertDelayDays(),
+                $notification->getStatus()->label(),
+                $notification->getRecipient()?->getFullName(),
+            ];
+        }
+
+        $context = [];
+        if ($filters['activeOnly']) {
+            $context[] = 'Alertes actives seulement';
+        }
+        if (null !== $filters['term']) {
+            $context[] = 'Recherche : '.$filters['term'];
+        }
+        $context[] = $result['total'].' notification(s)';
+
+        return $exporter->download('notifications-contractuelles', 'Centre de notifications contractuelles', [
+            Column::text('Gravité', 12),
+            Column::text('Événement', 28),
+            Column::text('Titre', 34),
+            Column::text('Contrat', 18),
+            Column::text('Client', 24),
+            Column::date('Date déclencheuse'),
+            Column::date('Déclenchement'),
+            Column::integer('Délai (jours)'),
+            Column::text('Statut', 14),
+            Column::text('Destinataire', 22),
+        ], $rows, $context);
     }
 
     #[Route('/generer', name: 'generate', methods: ['POST'])]

@@ -10,6 +10,7 @@
             <div class="page-head__subtitle">{{ partners|length }} associé{{ partners|length > 1 ? 's' : '' }} · {{ total_ownership|money_rate }} du capital renseigné</div>
         </div>
         <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' with {export_path: path('app_partner_export')} %}
             {% if can('partner.manage') %}<a class="btn btn--primary" href="{{ path('app_partner_new') }}">Nouvel associé</a>{% endif %}
         </div>
     </div>

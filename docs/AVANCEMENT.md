@@ -20,14 +20,15 @@ Les modules financiers facturation, charges, trésorerie et associés sont
 également livrés, avec montants exacts en `bcmath`, rattachement des mouvements
 de trésorerie aux documents et contrôles de séparation des tâches.
 
-Les modules de répartition indirecte, immobilisations, résultat annuel,
-distribution et reporting/export restent à développer.
+Les modules de répartition indirecte, immobilisations, résultat annuel et
+distribution restent à développer ; l'export PDF reste également à livrer,
+les exports Excel et l'impression étant disponibles.
 
 | Indicateur | Valeur |
 |---|---|
-| Tests automatisés | **41 tests, 189 assertions — OK** |
+| Tests automatisés | **77 tests, 307 assertions — OK** |
 | Contrôle du conteneur Symfony | `lint:container` OK |
-| Syntaxe Twig | 64 fichiers valides |
+| Syntaxe Twig | 66 fichiers valides |
 | Schéma Doctrine | `doctrine:schema:validate` OK |
 | Migrations | 2 migrations appliquées (dev et test) |
 | Permissions | 48 permissions, 5 rôles par défaut |
@@ -151,6 +152,21 @@ distribution et reporting/export restent à développer.
 - Tests isolés par transaction PostgreSQL, sans réinitialisation manuelle de la
   base entre deux exécutions.
 
+### 2.9. Exports et impression
+
+- Export Excel (`.xlsx`, PhpSpreadsheet) sur toutes les listes : clients,
+  fournisseurs, projets, contrats, facturation à réaliser, alertes, factures,
+  charges, trésorerie, associés, utilisateurs, rôles, exercices, types de projet
+  et journal d'audit.
+- Les exports reprennent les filtres actifs et le périmètre de droits de
+  l'utilisateur (projets et contrats limités à son périmètre).
+- Classeur structuré : titre, contexte et date, en-têtes figés et filtrables,
+  colonnes dimensionnées, formats de nombres exacts, ligne de totaux et mise en
+  page A4 prête à imprimer.
+- Impression de tous les écrans de liste et de détail via le bouton
+  **Imprimer** ; feuille de style papier dédiée (navigation masquée, en-têtes de
+  tableau répétés, lignes non coupées, A4).
+
 ## 3. Décisions techniques
 
 | Sujet | Décision | Motif |
@@ -175,7 +191,7 @@ docker compose exec -u application php php bin/phpunit
 Résultat attendu :
 
 ```
-OK (41 tests, 189 assertions)
+OK (77 tests, 307 assertions)
 ```
 
 Les tests couvrent notamment :
@@ -192,7 +208,10 @@ Les tests couvrent notamment :
 - les scénarios REC-021 à REC-036 du module 15 ;
 - la séparation des tâches sur les charges et les associés ;
 - l'approbation et le paiement partiel d'une charge ;
-- la validation et le règlement d'une opération d'associé.
+- la validation et le règlement d'une opération d'associé ;
+- la génération d'un classeur Excel valide (en-têtes, totaux, formats) et la
+  disponibilité des quinze routes d'export ;
+- la présence des actions d'export et d'impression sur les écrans.
 
 Le détail des scénarios figure dans [`04-recette.md`](04-recette.md).
 
@@ -201,7 +220,9 @@ Le détail des scénarios figure dans [`04-recette.md`](04-recette.md).
 1. **Répartition indirecte, immobilisations, résultat annuel, distribution et
    reporting non livrés.** Les écrans correspondants restent absents ou
    explicitement marqués comme à venir.
-2. **Exports PDF/XLSX non livrés.** Aucun export partiel n'est proposé.
+2. **Exports PDF non livrés.** Les exports Excel (`.xlsx`) et l'impression
+   navigateur sont disponibles sur toutes les listes et les fiches ; seule la
+   génération PDF serveur reste à livrer.
 3. **Courriels métier non envoyés.** Le transport Mailpit est configuré ; les
    alertes contractuelles sont consultables dans l'application uniquement.
 4. **Imputation multi-factures non livrée.** Un encaissement est rattaché à une
@@ -225,7 +246,7 @@ Le détail des scénarios figure dans [`04-recette.md`](04-recette.md).
 | Suivante | Application systématique du garde-fou exercice clôturé aux écritures financières. |
 | Suivante | Charges indirectes, clés de répartition, immobilisations. |
 | Suivante | Résultat annuel, simulation et décision de distribution. |
-| Phase finale | Exports PDF/XLSX, rapports, tableau de bord financier complet, recette globale. |
+| Phase finale | Exports PDF, rapports, tableau de bord financier complet, recette globale. |
 
 ## 7. Historique
 
@@ -236,3 +257,4 @@ Le détail des scénarios figure dans [`04-recette.md`](04-recette.md).
 | 22/10/2026 | Module 15 : contrats, maintenance, réceptions, renouvellements, retenues, calendrier, facturation à réaliser et alertes. |
 | 22/10/2026 | Finances : facturation, charges, trésorerie, associés, migration, jeu de démonstration et recette REC-021 à REC-036. |
 | 22/10/2026 | Calendrier contractuel : agenda par jour et vue mensuelle navigable, jalons inclus. |
+| 22/10/2026 | Exports Excel sur toutes les listes et impression de tous les écrans, avec prise en compte des filtres et du périmètre de droits. |

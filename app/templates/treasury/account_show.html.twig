@@ -10,6 +10,7 @@
             <div class="page-head__subtitle">{{ account.bankName ?: 'Compte de trésorerie' }} · {{ account.currencyCode }}</div>
         </div>
         <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' %}
             {% if can('treasury.manage') %}
                 <a class="btn" href="{{ path('app_treasury_account_edit', {id: account.idString}) }}">Modifier</a>
                 <a class="btn btn--primary" href="{{ path('app_treasury_movement_new') }}">Nouveau mouvement</a>

@@ -10,6 +10,8 @@ use App\Enum\FiscalYearStatus;
 use App\Form\FiscalYearFormType;
 use App\Repository\FiscalYearRepository;
 use App\Service\AuditLogger;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -38,6 +40,43 @@ final class FiscalYearController extends AbstractController
             'fiscal_years' => $fiscalYearRepository->findAllOrdered(),
             'current' => $fiscalYearRepository->findCurrent(),
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    public function export(FiscalYearRepository $fiscalYearRepository, SpreadsheetExporter $exporter): Response
+    {
+        if (!$this->isGranted('admin.referentials') && !$this->isGranted('fiscal_year.close')) {
+            throw $this->createAccessDeniedException('Accès aux exercices non autorisé.');
+        }
+
+        $fiscalYears = $fiscalYearRepository->findAllOrdered();
+
+        $rows = [];
+        foreach ($fiscalYears as $fiscalYear) {
+            $rows[] = [
+                $fiscalYear->getLabel(),
+                $fiscalYear->getStartDate(),
+                $fiscalYear->getEndDate(),
+                $fiscalYear->getStatus()->label(),
+                $fiscalYear->getClosedAt(),
+                $fiscalYear->getClosedBy()?->getFullName(),
+            ];
+        }
+
+        $current = $fiscalYearRepository->findCurrent();
+        $context = [sprintf('%d exercice(s)', \count($fiscalYears))];
+        if (null !== $current) {
+            $context[] = 'Exercice courant : '.$current->getLabel();
+        }
+
+        return $exporter->download('exercices-financiers', 'Exercices financiers', [
+            Column::text('Libellé', 14),
+            Column::date('Début'),
+            Column::date('Fin'),
+            Column::text('Statut', 14),
+            Column::dateTime('Clôturé le'),
+            Column::text('Clôturé par', 24),
+        ], $rows, $context);
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]

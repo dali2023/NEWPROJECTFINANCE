@@ -15,13 +15,16 @@ trait PaginatesQueries
 {
     public const DEFAULT_PER_PAGE = 25;
     public const MAX_PER_PAGE = 200;
+    /** Plafond spécifique aux exports Excel (les listes restent limitées à 200). */
+    public const MAX_EXPORT_PER_PAGE = 10000;
 
     /**
      * @return array{items: list<mixed>, total: int, page: int, perPage: int, pages: int}
      */
     public function paginate(QueryBuilder $queryBuilder, int $page = 1, int $perPage = self::DEFAULT_PER_PAGE): array
     {
-        $perPage = max(1, min($perPage, self::MAX_PER_PAGE));
+        $perPage = max(1, $perPage);
+        $perPage = min($perPage, $perPage > self::MAX_PER_PAGE ? self::MAX_EXPORT_PER_PAGE : self::MAX_PER_PAGE);
         $page = max(1, $page);
 
         $paginator = new Paginator($queryBuilder->setFirstResult(($page - 1) * $perPage)->setMaxResults($perPage), true);

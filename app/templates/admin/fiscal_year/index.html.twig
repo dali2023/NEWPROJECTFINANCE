@@ -16,6 +16,7 @@
             </div>
         </div>
         <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' with {export_path: path('app_admin_fiscal_year_export')} %}
             {% if can('admin.referentials') %}
                 <a class="btn btn--primary" href="{{ path('app_admin_fiscal_year_new') }}">Nouvel exercice</a>
             {% endif %}

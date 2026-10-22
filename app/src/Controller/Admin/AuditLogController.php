@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Repository\AuditLogRepository;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -43,6 +45,59 @@ final class AuditLogController extends AbstractController
                 'au' => $to,
             ],
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    public function export(Request $request, AuditLogRepository $auditLogRepository, SpreadsheetExporter $exporter): Response
+    {
+        $from = $request->query->getString('du');
+        $to = $request->query->getString('au');
+
+        $result = $auditLogRepository->search(
+            entity: $request->query->getString('entite') ?: null,
+            action: $request->query->getString('action') ?: null,
+            username: $request->query->getString('utilisateur') ?: null,
+            from: '' !== $from ? new \DateTimeImmutable($from.' 00:00:00') : null,
+            to: '' !== $to ? new \DateTimeImmutable($to.' 23:59:59') : null,
+            page: 1,
+            perPage: 10000,
+        );
+
+        $rows = [];
+        foreach ($result['items'] as $entry) {
+            $rows[] = [
+                $entry->getOccurredAt(),
+                $entry->getUsername(),
+                $entry->getAction(),
+                $entry->getEntity(),
+                $entry->getEntityId(),
+                $entry->getModule(),
+                $entry->getResult(),
+                $entry->getIpAddress(),
+                $entry->getMessage(),
+            ];
+        }
+
+        $context = [];
+        if ('' !== $from) {
+            $context[] = 'Du '.$from;
+        }
+        if ('' !== $to) {
+            $context[] = 'Au '.$to;
+        }
+        $context[] = $result['total'].' entrée(s)';
+
+        return $exporter->download('journal-audit', 'Journal d’audit', [
+            Column::dateTime('Horodatage'),
+            Column::text('Utilisateur', 18),
+            Column::text('Action', 20),
+            Column::text('Entité', 20),
+            Column::text('Identifiant', 38),
+            Column::text('Module', 8),
+            Column::text('Résultat', 12),
+            Column::text('Adresse IP', 16),
+            Column::text('Détail', 46),
+        ], $rows, $context);
     }
 
     /** @return list<string> */

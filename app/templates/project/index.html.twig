@@ -15,6 +15,7 @@
             </div>
         </div>
         <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' with {export_path: path('app_project_export', app.request.query.all)} %}
             {% if can('project.manage') %}
                 <a class="btn btn--primary" href="{{ path('app_project_new') }}">Nouveau projet</a>
             {% endif %}

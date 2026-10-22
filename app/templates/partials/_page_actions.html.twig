@@ -1,0 +1,9 @@
+{# Boutons d'export et d'impression communs aux écrans de liste. #}
+{% if export_path is defined and export_path %}
+    <a class="btn btn--ghost" href="{{ export_path }}" title="Télécharger les données affichées au format Excel">
+        Exporter Excel
+    </a>
+{% endif %}
+<button type="button" class="btn btn--ghost" data-print title="Imprimer cette page">
+    Imprimer
+</button>

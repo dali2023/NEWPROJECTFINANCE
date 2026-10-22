@@ -8,6 +8,8 @@ use App\Entity\ProjectType;
 use App\Form\ProjectTypeFormType;
 use App\Repository\ProjectTypeRepository;
 use App\Service\AuditLogger;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,6 +30,31 @@ final class ProjectTypeController extends AbstractController
         return $this->render('admin/project_type/index.html.twig', [
             'project_types' => $projectTypeRepository->findAllOrdered(),
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    public function export(ProjectTypeRepository $projectTypeRepository, SpreadsheetExporter $exporter): Response
+    {
+        $projectTypes = $projectTypeRepository->findAllOrdered();
+
+        $rows = [];
+        foreach ($projectTypes as $projectType) {
+            $rows[] = [
+                $projectType->getSortOrder(),
+                $projectType->getCode(),
+                $projectType->getLabel(),
+                $projectType->getDescription(),
+                $projectType->isActive() ? 'Actif' : 'Inactif',
+            ];
+        }
+
+        return $exporter->download('types-projet', 'Typologie des projets', [
+            Column::integer('Ordre'),
+            Column::text('Code', 14),
+            Column::text('Libellé', 30),
+            Column::text('Description', 50),
+            Column::text('Statut', 10),
+        ], $rows, [sprintf('%d type(s) de projet', \count($projectTypes))]);
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]

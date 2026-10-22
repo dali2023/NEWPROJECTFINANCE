@@ -5,6 +5,20 @@
     'use strict';
 
     /**
+     * Impression : tout bouton [data-print] déclenche la boîte de dialogue
+     * d'impression du navigateur. Le rendu papier est défini dans app.css.
+     */
+    document.addEventListener('click', function (event) {
+        var trigger = event.target.closest('[data-print]');
+        if (!trigger) {
+            return;
+        }
+
+        event.preventDefault();
+        window.print();
+    });
+
+    /**
      * Collection de jalons : ajout / suppression de lignes.
      * Le prototype est fourni par Symfony (data-prototype).
      */

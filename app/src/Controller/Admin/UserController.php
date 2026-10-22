@@ -9,6 +9,8 @@ use App\Form\UserFormType;
 use App\Repository\RoleRepository;
 use App\Repository\UserRepository;
 use App\Service\AuditLogger;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +35,45 @@ final class UserController extends AbstractController
             'result' => $userRepository->search($term, null, $request->query->getInt('page', 1)),
             'term' => $term,
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    public function export(Request $request, UserRepository $userRepository, SpreadsheetExporter $exporter): Response
+    {
+        $term = $request->query->getString('q') ?: null;
+        $result = $userRepository->search($term, null, 1, 10000);
+
+        $rows = [];
+        foreach ($result['items'] as $user) {
+            $roles = [];
+            foreach ($user->getAssignedRoles() as $role) {
+                $roles[] = $role->getLabel();
+            }
+
+            $rows[] = [
+                $user->getFullName(),
+                $user->getUsername(),
+                $user->getEmail(),
+                implode(', ', $roles),
+                $user->getLastLoginAt(),
+                $user->isActive() ? 'Actif' : 'Inactif',
+            ];
+        }
+
+        $context = [];
+        if (null !== $term) {
+            $context[] = 'Recherche : '.$term;
+        }
+        $context[] = $result['total'].' compte(s)';
+
+        return $exporter->download('utilisateurs', 'Comptes utilisateurs', [
+            Column::text('Nom', 26),
+            Column::text('Identifiant', 18),
+            Column::text('E-mail', 28),
+            Column::text('Rôles', 30),
+            Column::dateTime('Dernière connexion', 18),
+            Column::text('Statut', 10),
+        ], $rows, $context);
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]

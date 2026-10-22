@@ -18,6 +18,7 @@
             </div>
         </div>
         <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' %}
             {% if can('client.manage') %}
                 <a class="btn btn--primary" href="{{ path('app_client_edit', {id: client.idString}) }}">Modifier</a>
                 <form class="inline-form" method="post" action="{{ path('app_client_toggle', {id: client.idString}) }}"

@@ -11,6 +11,9 @@
                 {{ result.total }} entrée{{ result.total > 1 ? 's' : '' }} — conservation en lecture seule
             </div>
         </div>
+        <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' with {export_path: path('app_admin_audit_export', app.request.query.all)} %}
+        </div>
     </div>
 
     <section class="card">

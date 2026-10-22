@@ -21,6 +21,7 @@
             </div>
         </div>
         <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' %}
             {% if is_granted('PROJECT_EDIT', project) %}
                 <a class="btn btn--primary" href="{{ path('app_project_edit', {id: project.idString}) }}">Modifier</a>
             {% endif %}

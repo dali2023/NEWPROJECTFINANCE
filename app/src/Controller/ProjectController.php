@@ -17,6 +17,8 @@ use App\Repository\UserRepository;
 use App\Security\PermissionChecker;
 use App\Security\Voter\ProjectVoter;
 use App\Service\AuditLogger;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use App\Service\Money;
 use App\Service\ReferenceGenerator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -69,6 +71,72 @@ final class ProjectController extends AbstractController
             'managers' => $userRepository->findActiveOrdered(),
             'scope_limited' => null !== $scope,
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    public function export(
+        Request $request,
+        ProjectRepository $projectRepository,
+        ClientRepository $clientRepository,
+        ProjectTypeRepository $projectTypeRepository,
+        UserRepository $userRepository,
+        PermissionChecker $permissionChecker,
+        SpreadsheetExporter $exporter,
+    ): Response {
+        $user = $this->getUser();
+        if (!$this->isGranted('project.view_all') && !$this->isGranted('project.view_own')) {
+            throw $this->createAccessDeniedException('Vous n’êtes pas autorisé à exporter les projets.');
+        }
+
+        $scope = $permissionChecker->canViewAllProjects($user) ? null : $user;
+        $filters = [
+            'term' => $request->query->getString('q') ?: null,
+            'status' => ProjectStatus::tryFrom($request->query->getString('statut')),
+            'client' => $this->findByUuid($clientRepository, $request->query->getString('client')),
+            'type' => $this->findByUuid($projectTypeRepository, $request->query->getString('type')),
+            'manager' => $this->findByUuid($userRepository, $request->query->getString('responsable')),
+            'onlyFor' => $scope,
+        ];
+
+        $result = $projectRepository->search($filters, 1, 10000);
+
+        $rows = [];
+        foreach ($result['items'] as $project) {
+            $rows[] = [
+                $project->getCode(),
+                $project->getName(),
+                $project->getClient()?->getName(),
+                $project->getProjectType()?->getLabel(),
+                $project->getManager()?->getFullName(),
+                $project->getStatus()->label(),
+                $project->getContractAmountHt(),
+                $project->getBudgetAmount(),
+                $project->getStartDate(),
+                $project->getEndDate(),
+            ];
+        }
+
+        $context = ['Export selon les filtres de la liste'];
+        if (null !== $filters['term']) {
+            $context[] = 'Recherche : '.$filters['term'];
+        }
+        if (null !== $scope) {
+            $context[] = 'Périmètre : projets dont vous êtes responsable';
+        }
+        $context[] = $result['total'].' projet(s)';
+
+        return $exporter->download('projets', 'Projets et contrats', [
+            Column::text('Référence', 16),
+            Column::text('Intitulé', 34),
+            Column::text('Client', 24),
+            Column::text('Typologie', 18),
+            Column::text('Responsable', 20),
+            Column::text('Statut', 16),
+            Column::money('Montant HT'),
+            Column::money('Budget'),
+            Column::date('Début'),
+            Column::date('Fin'),
+        ], $rows, $context);
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]

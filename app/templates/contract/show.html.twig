@@ -16,6 +16,7 @@
             </div>
         </div>
         <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' %}
             {% if is_granted('CONTRACT_RENEW', contract) %}
                 <a class="btn" href="{{ path('app_contract_renewal_new', {id: contract.idString}) }}">Renouveler</a>
             {% endif %}

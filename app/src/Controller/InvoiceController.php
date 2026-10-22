@@ -16,6 +16,8 @@ use App\Repository\InvoiceRepository;
 use App\Security\PermissionChecker;
 use App\Service\AuditLogger;
 use App\Service\ExpenseService;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use App\Service\InvoiceService;
 use App\Service\ReferenceGenerator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -63,6 +65,70 @@ final class InvoiceController extends AbstractController
             'open_balance' => $invoiceRepository->sumOpenBalance(),
             'overdue_balance' => $invoiceRepository->sumOverdueBalance(),
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    #[IsGranted('invoice.view')]
+    public function export(
+        Request $request,
+        InvoiceRepository $invoiceRepository,
+        ClientRepository $clientRepository,
+        SpreadsheetExporter $exporter,
+    ): Response {
+        $filters = [
+            'term' => $request->query->getString('q') ?: null,
+            'client' => $this->findByUuid($clientRepository, $request->query->getString('client')),
+            'status' => InvoiceStatus::tryFrom($request->query->getString('statut')),
+            'type' => InvoiceType::tryFrom($request->query->getString('type')),
+            'overdueOnly' => $request->query->getBoolean('retard') ?: null,
+        ];
+
+        $result = $invoiceRepository->search($filters, 1, 10000);
+
+        $rows = [];
+        foreach ($result['items'] as $invoice) {
+            $rows[] = [
+                $invoice->getNumber(),
+                $invoice->getInvoiceType()->label(),
+                $invoice->getClient()?->getName(),
+                $invoice->getProject()?->getCode(),
+                $invoice->getIssueDate(),
+                $invoice->getDueDate(),
+                $invoice->getStatus()->label(),
+                $invoice->getAmountHt(),
+                $invoice->getVatAmount(),
+                $invoice->getAmountTtc(),
+                $invoice->getPaidAmount(),
+                $invoice->getBalance(),
+                $invoice->isOverdue() ? 'Oui' : 'Non',
+            ];
+        }
+
+        $context = [];
+        if (null !== $filters['term']) {
+            $context[] = 'Recherche : '.$filters['term'];
+        }
+        if ($filters['overdueOnly']) {
+            $context[] = 'Factures en retard seulement';
+        }
+        $context[] = $result['total'].' facture(s)';
+        $context[] = 'Solde ouvert : '.$invoiceRepository->sumOpenBalance().' TND';
+
+        return $exporter->download('factures', 'Facturation client', [
+            Column::text('Numéro', 18),
+            Column::text('Type', 18),
+            Column::text('Client', 26),
+            Column::text('Projet', 14),
+            Column::date('Date'),
+            Column::date('Échéance'),
+            Column::text('Statut', 16),
+            Column::money('HT'),
+            Column::money('TVA'),
+            Column::money('TTC'),
+            Column::money('Payé'),
+            Column::money('Solde'),
+            Column::text('En retard', 10),
+        ], $rows, $context);
     }
 
     #[Route('/nouvelle', name: 'new', methods: ['GET', 'POST'])]

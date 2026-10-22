@@ -13,6 +13,7 @@
             <div class="page-head__subtitle">Agenda et vue mensuelle des échéances — renouvellements, jalons, réceptions, garanties et retenues</div>
         </div>
         <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' %}
             <a class="btn btn--ghost" href="{{ path('app_contract_billing_index') }}">Facturation à réaliser</a>
             <a class="btn btn--ghost" href="{{ path('app_contract_index') }}">Registre</a>
         </div>

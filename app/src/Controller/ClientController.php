@@ -9,6 +9,8 @@ use App\Enum\ClientType;
 use App\Form\ClientFormType;
 use App\Repository\ClientRepository;
 use App\Service\AuditLogger;
+use App\Service\Export\Column;
+use App\Service\Export\SpreadsheetExporter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -45,6 +47,56 @@ final class ClientController extends AbstractController
             'active_only' => $activeOnly,
             'client_types' => ClientType::cases(),
         ]);
+    }
+
+    #[Route('/export', name: 'export', methods: ['GET'])]
+    public function export(Request $request, ClientRepository $clientRepository, SpreadsheetExporter $exporter): Response
+    {
+        $term = $request->query->getString('q') ?: null;
+        $typeValue = $request->query->getString('type');
+        $type = '' !== $typeValue ? ClientType::tryFrom($typeValue) : null;
+        $activeOnly = $request->query->has('actifs') ? true : null;
+
+        $result = $clientRepository->search($term, $type, $activeOnly, 1, 10000);
+
+        $rows = [];
+        foreach ($result['items'] as $client) {
+            $rows[] = [
+                $client->getCode(),
+                $client->getName(),
+                $client->getClientType()->label(),
+                $client->getContactName(),
+                $client->getEmail(),
+                $client->getPhone(),
+                $client->getCity(),
+                $client->getPaymentTermsDays(),
+                $client->isActive() ? 'Actif' : 'Inactif',
+            ];
+        }
+
+        $context = [];
+        if (null !== $term) {
+            $context[] = 'Recherche : '.$term;
+        }
+        if (null !== $type) {
+            $context[] = 'Type : '.$type->label();
+        }
+        if ($activeOnly) {
+            $context[] = 'Clients actifs seulement';
+        }
+        $context[] = $result['total'].' client(s)';
+
+        return $exporter->download('clients', 'Liste des clients', [
+            Column::text('Code', 14),
+            Column::text('Raison sociale', 32),
+            Column::text('Type', 20),
+            Column::text('Contact', 24),
+            Column::text('E-mail', 28),
+            Column::text('Téléphone', 16),
+            Column::text('Ville', 16),
+            Column::integer('Délai (jours)'),
+            Column::text('Statut', 10),
+        ], $rows, $context);
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
