@@ -93,7 +93,8 @@ distribution et reporting/export restent à développer.
   historisation.
 - Renouvellement **explicite** : décision, nouveau contrat, clôture de
   l'ancien, génération facultative des échéances.
-- Calendrier contractuel : échéances à venir, expirations et renouvellements.
+- Calendrier contractuel : vue agenda groupée par jour et vue mensuelle
+  navigable, échéances à venir, expirations, jalons et renouvellements.
 - Facturation à réaliser : agrégation des échéances prêtes, en retard et
   bloquées, avec création de facture brouillon.
 - Centre de notifications : alertes par type, sévérité, statut et destinataire,
@@ -234,3 +235,4 @@ Le détail des scénarios figure dans [`04-recette.md`](04-recette.md).
 | 21/10/2026 | Modèle de données, sécurité, référentiels, projets, tests et documentation du socle. |
 | 22/10/2026 | Module 15 : contrats, maintenance, réceptions, renouvellements, retenues, calendrier, facturation à réaliser et alertes. |
 | 22/10/2026 | Finances : facturation, charges, trésorerie, associés, migration, jeu de démonstration et recette REC-021 à REC-036. |
+| 22/10/2026 | Calendrier contractuel : agenda par jour et vue mensuelle navigable, jalons inclus. |

@@ -238,6 +238,43 @@ final class Module15AcceptanceTest extends DatabaseTestCase
         self::assertStringContainsString($contract->getReference(), (string) $this->client->getResponse()->getContent());
     }
 
+    public function testRec031bContractCalendarRendersAgendaAndMonthViews(): void
+    {
+        $user = $this->createUser('ROLE_REC031B_READER', ['contract.view_all']);
+        $client = $this->createClientFixture('Client recette 031b');
+        $contract = $this->createContractFixture($client, $user);
+        $contract->setEffectiveStartDate(new \DateTimeImmutable('-30 days'));
+        $contract->setEffectiveEndDate(new \DateTimeImmutable('+45 days'));
+        $milestone = $this->createMilestoneFixture(
+            $contract,
+            '5000.000',
+            CompletionStatus::Upcoming,
+            ContractBillingStatus::NotBillable,
+            new \DateTimeImmutable('+10 days'),
+        );
+        $this->entityManager->flush();
+
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/contrats/calendrier?vue=agenda&horizon=6');
+        self::assertResponseIsSuccessful();
+        $agenda = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('class="agenda"', $agenda);
+        self::assertStringContainsString('agenda__item--milestone', $agenda);
+        self::assertStringContainsString($milestone->getLabel(), $agenda);
+
+        $this->client->request('GET', '/contrats/calendrier?vue=mois&horizon=6');
+        self::assertResponseIsSuccessful();
+        $month = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('class="cal-grid"', $month);
+        self::assertStringContainsString('cal-day', $month);
+        self::assertStringContainsString('cal-chip--milestone', $month);
+        self::assertStringContainsString($contract->getReference(), $month);
+
+        $this->client->request('GET', '/contrats/calendrier?vue=mois&mois=1999-01&horizon=6');
+        self::assertResponseIsSuccessful();
+    }
+
     public function testRec032PostponedMilestoneKeepsHistory(): void
     {
         $user = $this->createUser('ROLE_REC032_MANAGER', ['contract.view_all', 'contract.bill']);

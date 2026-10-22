@@ -200,7 +200,22 @@ prête ou partiellement facturée.
 ### 7.4. Calendrier et alertes
 
 Menu **Contrats → Calendrier** : échéances contractuelles, expirations,
-réceptions, fins de garantie et renouvellements sur un horizon configurable.
+réceptions, fins de garantie, jalons et renouvellements sur un horizon
+configurable.
+
+Deux affichages sont disponibles :
+
+- **Agenda** : échéances regroupées par jour, avec le nombre d'échéances, les
+  badges « Aujourd'hui »/« Demain », le contrat, le client et le statut. Un clic
+  ouvre la fiche du contrat.
+- **Vue mensuelle** : grille du mois (lundi → dimanche), navigation mois
+  précédent/suivant, retour à aujourd'hui, pastilles colorées par type
+  d'échéance et légende. La liste des échéances du mois est affichée sous la
+  grille.
+
+Les filtres par type d'échéance et par horizon (3 à 24 mois) s'appliquent aux
+deux vues. La vue mensuelle est bornée au mois courant et à l'horizon choisi ;
+les flèches sont désactivées aux bornes.
 
 Menu **Contrats → Notifications** : alertes générées selon les délais
 paramétrés. Une alerte peut être prise en charge, résolue ou classée sans objet.

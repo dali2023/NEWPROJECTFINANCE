@@ -4,19 +4,26 @@
 {% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / Calendrier{% endblock %}
 
 {% block body %}
+    {% set month_names = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'] %}
+    {% set query = {type: type, horizon: horizon} %}
+
     <div class="page-head">
         <div>
             <h1>Calendrier contractuel</h1>
-            <div class="page-head__subtitle">Échéances des {{ horizon }} prochains mois — renouvellements, réceptions, garanties et retenues</div>
+            <div class="page-head__subtitle">Agenda et vue mensuelle des échéances — renouvellements, jalons, réceptions, garanties et retenues</div>
         </div>
         <div class="page-head__actions">
-            <a class="btn" href="{{ path('app_contract_billing_index') }}">Facturation à réaliser</a>
-            <a class="btn" href="{{ path('app_contract_index') }}">Registre</a>
+            <a class="btn btn--ghost" href="{{ path('app_contract_billing_index') }}">Facturation à réaliser</a>
+            <a class="btn btn--ghost" href="{{ path('app_contract_index') }}">Registre</a>
         </div>
     </div>
 
     <section class="card">
         <form method="get" action="{{ path('app_contract_calendar_index') }}" class="toolbar">
+            <input type="hidden" name="vue" value="{{ view }}">
+            {% if view == 'mois' %}
+                <input type="hidden" name="mois" value="{{ month_start|date('Y-m') }}">
+            {% endif %}
             <div class="field">
                 <label for="type">Type d’échéance</label>
                 <select id="type" name="type" data-auto-submit>
@@ -36,31 +43,107 @@
             <button class="btn" type="submit">Afficher</button>
         </form>
 
-        {% if events is empty %}
-            <div class="empty">Aucune échéance sur la période sélectionnée.</div>
-        {% else %}
-            {% set current_month = null %}
-            <div class="calendar-list">
-                {% for event in events %}
-                    {% set month = event.date|date('Y-m') %}
-                    {% if month != current_month %}
-                        {% set current_month = month %}
-                        <div class="calendar-month">
-                            <h2>{{ event.date|date('F Y')|capitalize }}</h2>
-                        </div>
+        <div class="cal-head">
+            <div class="segmented" role="tablist" aria-label="Mode d’affichage du calendrier">
+                <a role="tab" aria-selected="{{ view == 'agenda' ? 'true' : 'false' }}"
+                   class="segmented__item {{ view == 'agenda' ? 'is-active' }}"
+                   href="{{ path('app_contract_calendar_index', query|merge({vue: 'agenda'})) }}">Agenda</a>
+                <a role="tab" aria-selected="{{ view == 'mois' ? 'true' : 'false' }}"
+                   class="segmented__item {{ view == 'mois' ? 'is-active' }}"
+                   href="{{ path('app_contract_calendar_index', query|merge({vue: 'mois', mois: month_start|date('Y-m')})) }}">Vue mensuelle</a>
+            </div>
+
+            {% if view == 'mois' %}
+                <div class="cal-nav">
+                    {% if prev_month %}
+                        <a class="cal-nav__btn" aria-label="Mois précédent"
+                           href="{{ path('app_contract_calendar_index', query|merge({vue: 'mois', mois: prev_month|date('Y-m')})) }}">‹</a>
+                    {% else %}
+                        <span class="cal-nav__btn is-disabled" aria-hidden="true">‹</span>
                     {% endif %}
-                    <a class="calendar-event calendar-event--{{ event.type }}" href="{{ path('app_contract_show', {id: event.contract.idString}) }}">
-                        <span class="calendar-event__date">{{ event.date|date('d/m/Y') }}</span>
-                        <span class="calendar-event__label">{{ event.label }}</span>
-                        <span class="calendar-event__contract">
-                            <span class="mono">{{ event.contract.reference }}</span>
-                            · {{ event.contract.title }}
-                            {% if event.contract.client %} · {{ event.contract.client.name }}{% endif %}
-                        </span>
-                        <span class="badge {{ event.contract.status.badgeClass }}">{{ event.contract.status.label }}</span>
-                    </a>
+                    <div class="cal-nav__label">
+                        <strong>{{ month_names[month_start|date('n') - 1]|capitalize }} {{ month_start|date('Y') }}</strong>
+                        <span>{{ month_events_count }} échéance{{ month_events_count > 1 ? 's' }}</span>
+                    </div>
+                    {% if next_month %}
+                        <a class="cal-nav__btn" aria-label="Mois suivant"
+                           href="{{ path('app_contract_calendar_index', query|merge({vue: 'mois', mois: next_month|date('Y-m')})) }}">›</a>
+                    {% else %}
+                        <span class="cal-nav__btn is-disabled" aria-hidden="true">›</span>
+                    {% endif %}
+                    <a class="btn btn--ghost btn--sm"
+                       href="{{ path('app_contract_calendar_index', query|merge({vue: 'mois', mois: today|date('Y-m')})) }}">Aujourd’hui</a>
+                </div>
+            {% else %}
+                <div class="cal-summary">
+                    <strong>{{ events|length }}</strong> échéance{{ events|length > 1 ? 's' }} sur les {{ horizon }} prochains mois
+                </div>
+            {% endif %}
+        </div>
+
+        {% if view == 'mois' %}
+            <div class="cal-scroll">
+                <div class="cal-grid">
+                    <div class="cal-grid__head">
+                        {% for label in ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] %}
+                            <div class="cal-grid__dow">{{ label }}</div>
+                        {% endfor %}
+                    </div>
+                    {% for week in weeks %}
+                        <div class="cal-week">
+                            {% for day in week %}
+                                <div class="cal-day{{ day.in_month ? '' : ' is-outside' }}{{ day.is_today ? ' is-today' }}">
+                                    <div class="cal-day__head">
+                                        <span class="cal-day__num">{{ day.date|date('j') }}</span>
+                                        {% if day.is_today %}<span class="cal-day__today">Aujourd’hui</span>{% endif %}
+                                    </div>
+                                    <div class="cal-day__events">
+                                        {% for event in day.events|slice(0, 3) %}
+                                            <a class="cal-chip cal-chip--{{ event.type }}"
+                                               href="{{ path('app_contract_show', {id: event.contract.idString}) }}"
+                                               title="{{ event.label }} — {{ event.contract.reference }} ({{ event.contract.title }})">
+                                                <span class="cal-chip__dot" aria-hidden="true"></span>
+                                                <span class="cal-chip__text">{{ event.label }}</span>
+                                            </a>
+                                        {% endfor %}
+                                        {% if day.events|length > 3 %}
+                                            <span class="cal-day__more">+{{ day.events|length - 3 }} autre{{ day.events|length - 3 > 1 ? 's' }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="cal-legend">
+                <span class="cal-legend__title">Légende</span>
+                {% for value, label in event_types %}
+                    {% if value != 'all' %}
+                        <span class="cal-legend__item"><span class="cal-legend__dot cal-chip--{{ value }}"></span>{{ label }}</span>
+                    {% endif %}
                 {% endfor %}
             </div>
+
+            <div class="cal-section">
+                <h2 class="cal-section__title">Échéances de {{ month_names[month_start|date('n') - 1] }} {{ month_start|date('Y') }}</h2>
+                {% include 'contract/_agenda.html.twig' with {
+                    agenda_days: month_agenda_days,
+                    today: today,
+                    tomorrow: tomorrow,
+                    event_type_labels: event_type_labels,
+                    empty_message: 'Aucune échéance pour ce mois.'
+                } %}
+            </div>
+        {% else %}
+            {% include 'contract/_agenda.html.twig' with {
+                agenda_days: agenda_days,
+                today: today,
+                tomorrow: tomorrow,
+                event_type_labels: event_type_labels,
+                empty_message: 'Aucune échéance sur la période sélectionnée.'
+            } %}
         {% endif %}
     </section>
 {% endblock %}

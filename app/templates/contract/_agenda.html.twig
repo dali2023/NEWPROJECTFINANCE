@@ -1,0 +1,48 @@
+{% set month_names = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'] %}
+{% set weekday_names = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'] %}
+
+{% if agenda_days is empty %}
+    <div class="empty">{{ empty_message|default('Aucune échéance sur la période sélectionnée.') }}</div>
+{% else %}
+    <div class="agenda">
+        {% for day in agenda_days %}
+            <section class="agenda__day">
+                <header class="agenda__head">
+                    <div class="agenda__date">
+                        <span class="agenda__daynum">{{ day.date|date('d') }}</span>
+                        <span class="agenda__month">{{ month_names[day.date|date('n') - 1] }}</span>
+                    </div>
+                    <div class="agenda__meta">
+                        <div class="agenda__weekday">{{ weekday_names[day.date|date('w')]|capitalize }} {{ day.date|date('Y') }}</div>
+                        <div class="agenda__badges">
+                            {% if day.date|date('Y-m-d') == today|date('Y-m-d') %}
+                                <span class="badge badge--primary">Aujourd’hui</span>
+                            {% elseif day.date|date('Y-m-d') == tomorrow|date('Y-m-d') %}
+                                <span class="badge badge--info">Demain</span>
+                            {% endif %}
+                            <span class="agenda__count">{{ day.events|length }} échéance{{ day.events|length > 1 ? 's' }}</span>
+                        </div>
+                    </div>
+                </header>
+                <div class="agenda__items">
+                    {% for event in day.events %}
+                        <a class="agenda__item agenda__item--{{ event.type }}"
+                           href="{{ path('app_contract_show', {id: event.contract.idString}) }}">
+                            <span class="agenda__marker" aria-hidden="true"></span>
+                            <span class="agenda__type">{{ event_type_labels[event.type]|default(event.type) }}</span>
+                            <span class="agenda__label">{{ event.label }}</span>
+                            <span class="agenda__contract">
+                                <span class="mono">{{ event.contract.reference }}</span>
+                                <span class="agenda__contract-title">{{ event.contract.title }}</span>
+                                {% if event.contract.client %}
+                                    <span class="agenda__client">{{ event.contract.client.name }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="badge {{ event.contract.status.badgeClass }}">{{ event.contract.status.label }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endfor %}
+    </div>
+{% endif %}
