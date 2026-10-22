@@ -1,10 +1,12 @@
 {% extends 'layout/auth.html.twig' %}
 
+{% set company = company_settings() %}
+
 {% block title %}Connexion{% endblock %}
 
 {% block auth_form %}
     <h1>Connexion</h1>
-    <p class="lead">Accédez au pilotage financier de ONE ERP.</p>
+    <p class="lead">Accédez au pilotage financier de {{ company.displayName }}.</p>
 
     {% if error %}
         <div class="alert alert--error" role="alert">

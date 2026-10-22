@@ -101,6 +101,12 @@ p { margin: 0 0 .75rem; }
 
 .sidebar__title { color: #fff; font-weight: 600; font-size: .92rem; line-height: 1.2; }
 .sidebar__subtitle { font-size: .72rem; color: #8fa3ad; letter-spacing: .04em; text-transform: uppercase; }
+.sidebar__logo--image {
+    object-fit: contain;
+    background: #fff;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, .18);
+}
 
 .sidebar__nav { padding: .8rem .6rem; overflow-y: auto; flex: 1; }
 .nav-group { margin-bottom: .9rem; }
@@ -330,6 +336,53 @@ legend { font-size: .82rem; font-weight: 600; padding: 0 .35rem; color: var(--in
 .form-actions { display: flex; gap: .6rem; align-items: center; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 .choice-list > div { margin-bottom: .3rem; }
 .choice-list label { font-weight: 500; font-size: .84rem; display: flex; gap: .45rem; align-items: flex-start; }
+
+/* ------------------------------------------------------- Paramètres société */
+.settings-status { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+.settings-logo {
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-alt);
+}
+.settings-logo__image {
+    display: block;
+    max-width: 100%;
+    max-height: 170px;
+    object-fit: contain;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: .5rem;
+    margin-bottom: .55rem;
+}
+.settings-logo__placeholder {
+    width: 96px;
+    height: 96px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--brand);
+    color: #fff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: .55rem;
+}
+.settings-logo__meta { font-size: .78rem; color: var(--muted); margin-bottom: .8rem; word-break: break-word; }
+.settings-test { display: flex; gap: 1rem; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; }
+.settings-test__form { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.settings-test__form .input { min-width: 240px; }
+.settings-note__title { font-size: 1rem; margin: 0 0 .5rem; }
+.settings-note p { font-size: .88rem; }
+.code-block {
+    background: #101828;
+    color: #e4e7ec;
+    padding: .7rem .9rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: .8rem;
+    line-height: 1.5;
+}
 
 /* --------------------------------------------------------------- Filtres */
 .toolbar {
@@ -683,6 +736,28 @@ legend { font-size: .82rem; font-weight: 600; padding: 0 .35rem; color: var(--in
         letter-spacing: .08em;
         text-transform: uppercase;
         color: var(--muted);
+    }
+    .print-head__logo {
+        display: block;
+        max-height: 42px;
+        max-width: 150px;
+        object-fit: contain;
+        margin-bottom: 3px;
+    }
+    .print-head__company {
+        display: block;
+        font-size: 9pt;
+        font-weight: 700;
+        color: #111;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+    .print-head__details {
+        display: block;
+        font-size: 7.8pt;
+        color: var(--muted);
+        letter-spacing: 0;
+        text-transform: none;
     }
     .print-head__meta { font-size: 9pt; color: var(--muted); white-space: nowrap; }
 

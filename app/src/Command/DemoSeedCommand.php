@@ -79,6 +79,7 @@ final class DemoSeedCommand extends Command
         'admin.referentials' => ['Gérer les référentiels', 'M02', 'Types de projet, exercices financiers, catégories.'],
         'admin.allocation_rules' => ['Gérer les règles de répartition', 'M02', 'Clés de répartition des charges indirectes.'],
         'admin.audit' => ['Consulter le journal d’audit', 'M14', 'Lecture seule du journal des opérations sensibles.'],
+        'admin.settings' => ['Paramétrer la société et les emails', 'M01', 'Identité, logo, coordonnées et serveur SMTP des rappels contractuels.'],
         'fiscal_year.close' => ['Clôturer un exercice', 'M02', 'Rend l’exercice en lecture seule.'],
         'fiscal_year.reopen' => ['Réouvrir un exercice clôturé', 'M02', 'Opération sensible, motivée et journalisée.'],
         'client.view' => ['Consulter les clients', 'M03', null],
@@ -135,7 +136,7 @@ final class DemoSeedCommand extends Command
             'label' => 'Administrateur',
             'description' => 'Comptes, référentiels, règles et journal d’audit. Ne valide pas les opérations financières par défaut.',
             'permissions' => [
-                'admin.users', 'admin.referentials', 'admin.allocation_rules', 'admin.audit',
+                'admin.users', 'admin.referentials', 'admin.allocation_rules', 'admin.audit', 'admin.settings',
                 'fiscal_year.reopen',
                 'client.view', 'client.manage', 'supplier.view', 'supplier.manage',
                 'project.view_all', 'project.view_own',

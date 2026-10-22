@@ -19,6 +19,7 @@ use App\Service\AuditLogger;
 use App\Service\ContractNotificationService;
 use App\Service\Export\Column;
 use App\Service\Export\SpreadsheetExporter;
+use App\Service\Mail\ContractReminderMailer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -172,6 +173,58 @@ final class ContractNotificationController extends AbstractController
         $this->addFlash('success', 0 === $created
             ? 'Aucune nouvelle alerte : toutes les échéances sont déjà couvertes.'
             : sprintf('%d nouvelle(s) alerte(s) générée(s).', $created));
+
+        return $this->redirectToRoute('app_contract_notification_index');
+    }
+
+    #[Route('/envoyer-rappels', name: 'send_reminders', methods: ['POST'])]
+    #[IsGranted('contract.notify')]
+    public function sendReminders(
+        Request $request,
+        ContractNotificationService $notificationService,
+        ContractReminderMailer $reminderMailer,
+        AuditLogger $auditLogger,
+    ): Response {
+        if (!$this->isCsrfTokenValid('contract_notifications_send_reminders', $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
+        $created = $notificationService->generateAll();
+        $result = $reminderMailer->sendPending();
+
+        if (isset($result['reason'])) {
+            $auditLogger->log('send_reminders', 'ContractNotification', null, null, [
+                'created' => $created,
+                'reason' => $result['reason'],
+            ], 'failure', 'M15', 'Envoi des rappels contractuels refusé');
+
+            $this->addFlash('error', $result['reason']);
+
+            return $this->redirectToRoute('app_contract_notification_index');
+        }
+
+        $auditLogger->log('send_reminders', 'ContractNotification', null, null, [
+            'created' => $created,
+            'sent' => $result['sent'],
+            'failed' => $result['failed'],
+            'skipped' => $result['skipped'],
+        ], 'success', 'M15', 'Envoi des rappels contractuels par email');
+
+        if (0 === $result['sent'] && 0 === $result['failed']) {
+            $this->addFlash('info', sprintf(
+                'Aucun rappel à envoyer : %d alerte(s) générée(s), aucune alerte en attente d’email.',
+                $created,
+            ));
+        } else {
+            $message = sprintf('%d rappel(s) envoyé(s)', $result['sent']);
+            if ($result['failed'] > 0) {
+                $message .= sprintf(', %d échec(s) — consultez le détail sur les alertes', $result['failed']);
+            }
+            if ($result['skipped'] > 0) {
+                $message .= sprintf(', %d ignoré(s) faute d’adresse destinataire', $result['skipped']);
+            }
+            $this->addFlash($result['failed'] > 0 ? 'warning' : 'success', $message.'.');
+        }
 
         return $this->redirectToRoute('app_contract_notification_index');
     }

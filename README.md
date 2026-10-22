@@ -113,6 +113,7 @@ docker compose exec -u application php php bin/console doctrine:migrations:diff
 docker compose exec -u application php php bin/console doctrine:migrations:migrate -n
 docker compose exec -u application php php bin/console doctrine:migrations:status
 docker compose exec -u application php php bin/console app:demo:seed --reset
+docker compose exec -u application php php bin/console app:contracts:send-reminders
 docker compose logs -f php nginx
 docker compose restart nginx
 ```
@@ -136,7 +137,7 @@ docker compose restart nginx
 │   └── tests/               tests fonctionnels et de cohérence financière
 ├── docker/                  Dockerfile PHP, php.ini, configuration Nginx
 ├── docs/                    documentation fonctionnelle et technique
-├── storage/                 justificatifs hors répertoire public
+├── storage/                 justificatifs et logo hors répertoire public
 └── docker-compose.yml
 ```
 
@@ -169,6 +170,7 @@ docker compose restart nginx
 | [`docs/06-guide-utilisateur.md`](docs/06-guide-utilisateur.md) | Guide utilisateur par profil |
 | [`docs/07-sauvegarde-restauration.md`](docs/07-sauvegarde-restauration.md) | Sauvegarde, restauration, RPO/RTO et test de reprise |
 | [`docs/08-parametrage-alertes.md`](docs/08-parametrage-alertes.md) | Délais, destinataires et idempotence des alertes contractuelles |
+| [`docs/09-parametrage-societe-email.md`](docs/09-parametrage-societe-email.md) | Société, logo, SMTP chiffré, email de test et rappels planifiés |
 
 ## Sécurité
 
@@ -178,16 +180,20 @@ docker compose restart nginx
 - Permissions vérifiées côté serveur ; les routes d'administration sont
   protégées par `#[IsGranted]`.
 - Journal d'audit consultable dans l'administration.
-- Justificatifs stockés hors du répertoire public, jamais servis directement par
-  Nginx.
+- Justificatifs et logo stockés hors du répertoire public, jamais servis
+  directement par Nginx ; le logo passe par une route publique dédiée, nécessaire
+  à l'écran de connexion et aux emails.
+- Mot de passe SMTP chiffré en AES-256-GCM avec une clé dérivée de `APP_SECRET`,
+  jamais réaffiché.
 
 ## Limites connues
 
 1. Répartition indirecte, immobilisations, résultat annuel, distribution et
-   reporting/export non livrés.
-2. Exports PDF/XLSX non livrés.
-3. Aucun courriel métier envoyé ; les alertes contractuelles restent internes à
-   l'application, Mailpit servant uniquement au développement.
+   reporting non livrés.
+2. Exports PDF serveur non livrés ; les exports Excel et l'impression navigateur
+   sont disponibles.
+3. Les rappels contractuels sont envoyés par email, mais leur périodicité dépend
+   d'un cron externe ; en développement, Mailpit capture les messages.
 4. Imputation d'un encaissement sur plusieurs factures, transferts internes de
    trésorerie et charges récurrentes non encore exposés.
 5. Le garde-fou « exercice clôturé » est vérifié sur l'administration des

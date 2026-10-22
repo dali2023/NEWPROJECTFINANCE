@@ -1,4 +1,5 @@
 {% set route = app.request.attributes.get('_route') %}
+{% set company = company_settings() %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -13,10 +14,16 @@
 <div class="app">
     <aside class="sidebar">
         <div class="sidebar__brand">
-            <div class="sidebar__logo">ONE</div>
+            {% if company.hasLogo %}
+                <img class="sidebar__logo sidebar__logo--image"
+                     src="{{ path('app_company_logo') }}?v={{ company.updatedAt ? company.updatedAt|date('U') : '1' }}"
+                     alt="{{ company.displayName }}">
+            {% else %}
+                <div class="sidebar__logo">{{ company.initials }}</div>
+            {% endif %}
             <div>
-                <div class="sidebar__title">Finance &amp;<br>Project Control</div>
-                <div class="sidebar__subtitle">ONE ERP SARL</div>
+                <div class="sidebar__title">{{ company.displayName }}</div>
+                <div class="sidebar__subtitle">Finance &amp; Project Control</div>
             </div>
         </div>
 
@@ -93,7 +100,7 @@
                 {% endif %}
             </div>
 
-            {% if can('admin.referentials') or can('admin.users') or can('admin.audit') or can('fiscal_year.close') %}
+            {% if can('admin.referentials') or can('admin.users') or can('admin.audit') or can('admin.settings') or can('fiscal_year.close') %}
                 <div class="nav-group">
                     <div class="nav-group__label">Administration</div>
                     {% if can('admin.referentials') or can('fiscal_year.close') %}
@@ -117,6 +124,14 @@
                     {% if can('admin.audit') %}
                         <a class="nav-link {{ route starts with 'app_admin_audit_' ? 'is-active' }}" href="{{ path('app_admin_audit_index') }}">
                             <span class="nav-link__icon">≡</span> Journal d’audit
+                        </a>
+                    {% endif %}
+                    {% if can('admin.settings') %}
+                        <a class="nav-link {{ route == 'app_admin_settings_company' ? 'is-active' }}" href="{{ path('app_admin_settings_company') }}">
+                            <span class="nav-link__icon">⚙</span> Paramètres société
+                        </a>
+                        <a class="nav-link {{ route starts with 'app_admin_settings_mail' ? 'is-active' }}" href="{{ path('app_admin_settings_mail') }}">
+                            <span class="nav-link__icon">✉</span> Paramètres email
                         </a>
                     {% endif %}
                 </div>
@@ -155,7 +170,24 @@
 
         <main class="content">
             <div class="print-only print-head">
-                <div class="print-head__brand">ONE ERP · Finance &amp; Project Control</div>
+                <div class="print-head__brand">
+                    {% if company.hasLogo %}
+                        <img class="print-head__logo"
+                             src="{{ path('app_company_logo') }}?v={{ company.updatedAt ? company.updatedAt|date('U') : '1' }}"
+                             alt="{{ company.displayName }}">
+                    {% endif %}
+                    <span class="print-head__company">{{ company.legalName }}</span>
+                    {% if company.formattedAddress %}
+                        <span class="print-head__details">{{ company.formattedAddress }}</span>
+                    {% endif %}
+                    {% if company.phones or company.email or company.taxId %}
+                        <span class="print-head__details">
+                            {% if company.phones %}{{ company.phones|join(' · ') }}{% endif %}
+                            {% if company.email %}{% if company.phones %} · {% endif %}{{ company.email }}{% endif %}
+                            {% if company.taxId %}{% if company.phones or company.email %} · {% endif %}MF : {{ company.taxId }}{% endif %}
+                        </span>
+                    {% endif %}
+                </div>
                 <div class="print-head__meta">{{ 'now'|date('d/m/Y H:i') }}</div>
             </div>
             {% include 'partials/_flash.html.twig' %}

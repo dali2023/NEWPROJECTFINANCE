@@ -27,6 +27,7 @@ sans redéploiement.
 | `admin.referentials` | Gérer les référentiels (catégories, types, exercices) |
 | `admin.allocation_rules` | Gérer les règles de répartition |
 | `admin.audit` | Consulter le journal d'audit |
+| `admin.settings` | Paramétrer l'identité de la société et le serveur SMTP des rappels |
 | `fiscal_year.close` | Clôturer un exercice |
 | `fiscal_year.reopen` | Réouvrir un exercice clôturé (sensible) |
 | `client.view` / `client.manage` | Consulter / gérer les clients |
@@ -64,7 +65,7 @@ sans redéploiement.
 
 | Permission | ADMIN | DIRECTION | FINANCE | COMMERCIAL | CHEF PROJET |
 |---|:--:|:--:|:--:|:--:|:--:|
-| `admin.users`, `admin.referentials`, `admin.allocation_rules`, `admin.audit` | ✓ | – | – | – | – |
+| `admin.users`, `admin.referentials`, `admin.allocation_rules`, `admin.audit`, `admin.settings` | ✓ | – | – | – | – |
 | `fiscal_year.close` | – | ✓ | ✓ | – | – |
 | `fiscal_year.reopen` | ✓ | – | – | – | – |
 | `client.*`, `supplier.*` | ✓ | vue | vue | ✓ | – |
@@ -122,3 +123,6 @@ sans redéploiement.
 9. **Séparation des tâches** : l'auteur d'une charge ne peut pas l'approuver ;
    une facture brouillon ne peut pas être encaissée ; une opération d'associé non
    validée ne peut pas être réglée.
+10. **Paramètres sensibles** : `admin.settings` donne accès aux coordonnées de
+    la société et au mot de passe SMTP. Le mot de passe est chiffré, jamais
+    réaffiché, et son changement est journalisé sans sa valeur.

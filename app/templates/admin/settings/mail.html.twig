@@ -1,0 +1,111 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Paramètres email{% endblock %}
+{% block breadcrumb %}Administration / Paramètres email{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Paramètres email</h1>
+            <div class="page-head__subtitle">
+                Serveur SMTP utilisé pour les rappels des dates de contrats.
+            </div>
+        </div>
+        <div class="page-head__actions">
+            <a class="btn btn--print" href="{{ path('app_admin_settings_company') }}">
+                <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 21V8l8-5 8 5v13"/>
+                    <path d="M9 21v-6h6v6"/>
+                </svg>
+                Paramètres société
+            </a>
+        </div>
+    </div>
+
+    <div class="settings-status">
+        {% if mail.isEnabled %}
+            <span class="badge badge--success">Envoi automatique activé</span>
+        {% else %}
+            <span class="badge badge--muted">Envoi automatique désactivé</span>
+        {% endif %}
+        {% if mail.isConfigured %}
+            <span class="badge badge--info">{{ mail.host }}:{{ mail.port }}</span>
+            <span class="badge badge--muted">{{ mail.encryption.label }}</span>
+            {% if mail.hasPassword %}
+                <span class="badge badge--success">Mot de passe enregistré</span>
+            {% else %}
+                <span class="badge badge--warning">Sans authentification</span>
+            {% endif %}
+        {% else %}
+            <span class="badge badge--warning">Configuration incomplète</span>
+        {% endif %}
+    </div>
+
+    <section class="card">
+        <div class="card__body">
+            {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+                {{ form_errors(form) }}
+                <fieldset>
+                    <legend>Connexion au serveur SMTP</legend>
+                    <div class="grid grid--2">
+                        {{ form_row(form.host) }}
+                        {{ form_row(form.port) }}
+                        {{ form_row(form.encryption) }}
+                        {{ form_row(form.username) }}
+                        {{ form_row(form.password) }}
+                        {% if mail.hasPassword %}
+                            {{ form_row(form.clearPassword) }}
+                        {% endif %}
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Expéditeur</legend>
+                    <div class="grid grid--2">
+                        {{ form_row(form.senderEmail) }}
+                        {{ form_row(form.senderName) }}
+                    </div>
+                    {{ form_row(form.isEnabled) }}
+                </fieldset>
+
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit">Enregistrer</button>
+                    <a class="btn btn--ghost" href="{{ path('app_dashboard') }}">Annuler</a>
+                </div>
+                {{ form_widget(form._token) }}
+            {{ form_end(form, {render_rest: false}) }}
+        </div>
+
+        <div class="card__footer">
+            <div class="settings-test">
+                <div>
+                    <strong>Vérifier la configuration</strong>
+                    <div class="help">Envoie un email de test avec les paramètres enregistrés, sans attendre le prochain rappel.</div>
+                </div>
+                <form method="post" action="{{ path('app_admin_settings_mail_test') }}" class="settings-test__form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('mail_settings_test') }}">
+                    <input class="input" type="email" name="test_email" required
+                           value="{{ app.user.email }}"
+                           placeholder="destinataire@exemple.tn"
+                           aria-label="Adresse du test">
+                    <button class="btn btn--print" type="submit">Envoyer le test</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card__body settings-note">
+            <h2 class="settings-note__title">Planification des rappels</h2>
+            <p>
+                Les rappels sont générés à partir des échéances des contrats, puis envoyés aux destinataires
+                des alertes. Pour un envoi automatique quotidien, planifiez la commande suivante sur le serveur :
+            </p>
+            <pre class="code-block">docker compose exec -T php php bin/console app:contracts:send-reminders</pre>
+            <p class="muted">
+                Exemple de cron quotidien à 08h00. En production, utilisez l’URL et les identifiants de votre
+                environnement. Le mot de passe SMTP est chiffré en base et n’est jamais réaffiché.
+            </p>
+        </div>
+    </section>
+{% endblock %}

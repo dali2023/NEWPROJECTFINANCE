@@ -1,0 +1,23 @@
+{{ company.legalName }}
+{% if company.formattedAddress %}{{ company.formattedAddress }}
+{% endif %}{% if company.phones %}{{ company.phones|join(' / ') }}
+{% endif %}{% if company.email %}{{ company.email }}
+{% endif %}{% if company.taxId %}Matricule fiscal : {{ company.taxId }}
+{% endif %}
+RAPPEL CONTRACTUEL
+
+{{ notification.title }}
+
+Bonjour {{ recipient.fullName }},
+
+{{ notification.message }}
+
+Contrat : {{ contract.reference }} - {{ contract.title }}
+Client : {{ contract.client ? contract.client.name : '—' }}
+Événement : {{ notification.notificationType.label }}
+Échéance : {{ notification.eventDate|date('d/m/Y') }}
+Délai : {{ notification.delayLabel }}
+{% if contract_url %}
+Consulter le contrat : {{ contract_url }}
+{% endif %}
+Cet email est envoyé automatiquement par {{ company.displayName }}.

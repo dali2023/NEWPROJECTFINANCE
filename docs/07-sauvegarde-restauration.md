@@ -1,7 +1,7 @@
 # Sauvegarde et restauration
 
 **Application :** ONE ERP Finance & Project Control  
-**Cible :** PostgreSQL 16 + justificatifs stockés hors du répertoire public  
+**Cible :** PostgreSQL 16 + justificatifs et logo stockés hors du répertoire public<br>
 **Objectifs :** RPO 24 h, RTO 8 h ouvrées (cahier des charges §9.3)
 
 ## 1. Périmètre
@@ -9,7 +9,7 @@
 | Élément | Emplacement | Sauvegarde |
 |---|---|---|
 | Base de données | volume Docker `pgdata` / base `one_erp_finance` | `pg_dump` quotidien |
-| Justificatifs | répertoire `storage/` (monté sur `/var/www/storage`) | archive quotidienne |
+| Justificatifs et logo | répertoire `storage/` (monté sur `/var/www/storage`) | archive quotidienne |
 | Configuration | `app/.env`, `.env`, secrets Symfony | coffre-fort de secrets, hors sauvegarde applicative |
 | Code source | dépôt Git | dépôt distant + étiquette de version |
 | Journaux | `app/var/log/` | non sauvegardés (rotation locale) |

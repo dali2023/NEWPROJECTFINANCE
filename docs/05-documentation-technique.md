@@ -37,7 +37,7 @@ Nginx ne peut pas servir un justificatif directement.
 | `src/Entity/` | Entités Doctrine et traits (`UuidIdTrait`, `TimestampableTrait`, `SoftDeletableTrait`) |
 | `src/Repository/` | Requêtes, filtres et pagination ; trait `PaginatesQueries` |
 | `src/Security/` | `PermissionChecker`, voters `Project`, `Contract`, `FiscalYear`, `Permission` |
-| `src/Service/` | `Money`, `ReferenceGenerator`, `AuditLogger`, `DocumentStorage`, `ContractBillingService`, `ContractNotificationService`, `MaintenanceScheduleService`, `InvoiceService`, `ExpenseService`, `TreasuryService`, `PartnerService` |
+| `src/Service/` | `Money`, `ReferenceGenerator`, `AuditLogger`, `DocumentStorage`, `ContractBillingService`, `ContractNotificationService`, `MaintenanceScheduleService`, `InvoiceService`, `ExpenseService`, `TreasuryService`, `PartnerService`, `Settings\SecretCipher`, `Settings\SettingsProvider`, `Mail\CompanyMailer`, `Mail\ContractReminderMailer` |
 | `src/Form/` | Formulaires et `DecimalTransformer` |
 | `src/EventSubscriber/` | Journalisation des refus d'accès |
 | `src/Enum/` | Statuts et libellés métier |
@@ -82,6 +82,15 @@ La migration `Version20261022021317.php` ajoute les tables suivantes :
 | Charges | `expenses`, `expense_payments` |
 | Trésorerie | `bank_accounts`, `cash_movements` |
 | Associés | `partners`, `partner_transactions` |
+
+La migration `Version20261022205916.php` ajoute deux tables de paramétrage
+singleton et complète le suivi des emails :
+
+| Table | Contenu |
+|---|---|
+| `company_settings` | Raison sociale, nom commercial, matricule fiscal, coordonnées, site, logo |
+| `mail_settings` | Serveur SMTP, port, chiffrement, identifiants, mot de passe chiffré, adresse et nom d'expédition, activation |
+| `contract_notifications` | Colonnes `email_sent_at`, `email_attempts`, `email_last_attempt_at`, `email_error` et index `email_sent_at` |
 
 Les montants restent en `NUMERIC(18,3)`, les taux en `NUMERIC(9,4)`. Les
 mouvements de trésorerie portent `source_type` et `source_id` afin de retrouver
@@ -149,9 +158,27 @@ pour BrowserKit.
 
 `AuditLogger` écrit une ligne pour chaque opération sensible : création,
 modification, changement de statut, clôture/réouverture, validation de facture,
-approbation de charge, renouvellement de contrat, libération de retenue et
-modification de permissions. `AccessDeniedListener` journalise les refus avec
-l'action `deny` et le résultat `denied`, y compris le chemin demandé.
+approbation de charge, renouvellement de contrat, libération de retenue,
+modification de permissions, paramétrage société/email et envoi de rappels.
+`AccessDeniedListener` journalise les refus avec l'action `deny` et le résultat
+`denied`, y compris le chemin demandé.
+
+### 5.5. Paramètres société et email
+
+- `CompanySettings` et `MailSettings` sont des singletons lus par
+  `SettingsProvider`, qui les met en cache par requête et les recharge après
+  enregistrement.
+- Le mot de passe SMTP est chiffré en AES-256-GCM (`SecretCipher`) avec une clé
+  dérivée de `APP_SECRET`. La valeur chiffrée n'est jamais rendue au navigateur ;
+  un champ vide conserve le secret existant.
+- Le transport des rappels est construit à la volée depuis la base
+  (`Transport::fromDsn()`), et non depuis `MAILER_DSN`.
+- Le logo est stocké hors de `public/` via `DocumentStorage` et exposé par la
+  route publique `/company/logo`, nécessaire à l'écran de connexion et aux
+  emails. Les autres justificatifs restent protégés.
+- L'accès aux deux écrans exige `admin.settings` ; l'envoi manuel exige en plus
+  `contract.notify`. Les adresses d'expédition et de test sont validées, et les
+  valeurs sensibles ne sont jamais journalisées.
 
 ## 6. Requêtes et pagination
 
@@ -212,8 +239,13 @@ docker compose exec -u application php php bin/phpunit
   formats.
 - `ExportPrintTest` : les quinze routes d'export répondent en `.xlsx` et les
   actions d'export/impression sont présentes.
+- `SettingsTest` : droits d'accès, enregistrement société et logo, chiffrement
+  et conservation du mot de passe SMTP, modes de chiffrement du DSN, email de
+  test, commande et action d'envoi désactivées, rendu des emails de rappel.
+- `SecretCipherTest` : aller-retour de chiffrement, unicité des nonces, rejet
+  d'un secret altéré.
 
-Résultat de référence : **77 tests, 307 assertions — OK**.
+Résultat de référence : **88 tests, 368 assertions — OK**.
 
 `DatabaseTestCase` ouvre une transaction PostgreSQL dans `setUp()` et l'annule
 dans `tearDown()`. Le noyau n'est pas redémarré entre les requêtes
@@ -228,11 +260,20 @@ La base de test reste ainsi propre d'une exécution à l'autre.
   modèle dans `.env.example`.
 - `APP_ENV`, `DATABASE_URL` et `MAILER_DSN` ne sont **pas** exportés par
   Compose : Symfony charge les fichiers `.env` attendus.
+- `APP_SECRET` dérive la clé de chiffrement des mots de passe SMTP. Le changer
+  impose de ressaisir ces mots de passe.
+- `APP_STORAGE_DIR` désigne le stockage hors racine web (logo, justificatifs) ;
+  `DEFAULT_URI` doit être l'URL publique utilisée dans les emails.
+- `MAILER_DSN` reste la configuration Symfony générale, mais les rappels
+  contractuels utilisent exclusivement les paramètres SMTP enregistrés en base.
 - `schema_filter` exclut `reference_sequences` du schéma Doctrine pour éviter
   sa suppression accidentelle par `doctrine:schema:update`.
 - `config/packages/contract_alerts.yaml` centralise les délais d'alerte
   contractuelle ; le détail figure dans
   [`08-parametrage-alertes.md`](08-parametrage-alertes.md).
+- Les rappels sont planifiés par `app:contracts:send-reminders` (option
+  `--limit`, 100 par défaut). Le détail figure dans
+  [`09-parametrage-societe-email.md`](09-parametrage-societe-email.md).
 - `vendor/` et `var/` sont des volumes Docker nommés (`vendor`, `app_var`) :
   les fichiers chauds restent dans la VM et ne traversent plus le montage
   Windows à chaque requête. Le script d'entrée
@@ -278,8 +319,10 @@ Points restant à raccorder :
 - **Exports PDF** : réutiliser les filtres et services de calcul des écrans afin
   de garantir l'identité des totaux (REC-016) ; les exports Excel et
   l'impression sont déjà livrés.
-- **Envoi de courriels** : brancher le transport Mailer sur les notifications
-  existantes, sans changer leur clé d'idempotence.
+- **Envoi de courriels** : le transport SMTP et les rappels contractuels sont
+  livrés. Les prochaines étapes possibles sont les notifications aux
+  responsables lors du dépôt d'un document et un modèle d'email par type
+  d'alerte.
 
 ## 11. Dette technique connue
 
@@ -289,7 +332,8 @@ Points restant à raccorder :
    ajout de bundles.
 4. L'imputation multi-factures, les transferts internes, les charges récurrentes
    et les modules de reporting/résultat restent à développer.
-5. Les alertes ne sont pas encore envoyées par courriel.
-6. Le garde-fou exercice clôturé doit être étendu à toutes les écritures
+5. Le garde-fou exercice clôturé doit être étendu à toutes les écritures
    financières.
-7. Les exports et le tableau de bord financier complet restent à livrer.
+6. Les exports PDF et le tableau de bord financier complet restent à livrer.
+7. L'envoi des rappels dépend d'une tâche cron externe ; aucun ordonnanceur
+   interne n'est fourni.

@@ -145,6 +145,11 @@ effectivement créées par la migration `Version20261022021317.php` sont :
 | Charges | `expenses`, `expense_payments` |
 | Trésorerie | `bank_accounts`, `cash_movements` |
 | Associés | `partners`, `partner_transactions` |
+| Paramétrage | `company_settings`, `mail_settings` (lignes uniques) |
+
+La migration `Version20261022205916.php` ajoute le paramétrage société/email et
+les colonnes de suivi d'envoi sur `contract_notifications`
+(`email_sent_at`, `email_attempts`, `email_last_attempt_at`, `email_error`).
 
 Points d'implémentation à retenir :
 
@@ -152,6 +157,8 @@ Points d'implémentation à retenir :
   (`completion_status`) et facturation (`billing_status`).
 - `contract_notifications` possède une clé unique d'idempotence construite sur
   le contrat, l'événement, la date, le délai, le destinataire et l'entité liée.
+  Le suivi d'envoi (`email_sent_at`, `email_attempts`, `email_error`) reste
+  indépendant de ce statut métier et n'empêche pas la clôture de l'alerte.
 - `cash_movements` porte `source_type` et `source_id` pour retrouver la facture,
   la charge ou l'opération d'associé à l'origine du flux.
 - Les montants restent en `NUMERIC(18,3)` et les taux en `NUMERIC(9,4)`.

@@ -28,7 +28,7 @@ Légende :
 
 | Indicateur | Résultat |
 |---|---|
-| Tests automatisés | **77 tests, 307 assertions — OK** |
+| Tests automatisés | **88 tests, 368 assertions - OK** |
 | Scénarios REC entièrement réussis | 25 (8 du socle + REC-021 à REC-037) |
 | Scénarios REC partiels | 7 |
 | Scénarios REC en attente de phase ultérieure | 5 |

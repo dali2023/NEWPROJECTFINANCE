@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Twig;
 
 use App\Service\Money;
+use App\Service\Settings\SettingsProvider;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Asset\Packages;
 use Twig\Extension\AbstractExtension;
@@ -24,6 +25,7 @@ final class AppExtension extends AbstractExtension
         private readonly Security $security,
         private readonly Packages $packages,
         private readonly string $projectDir,
+        private readonly SettingsProvider $settingsProvider,
     ) {
     }
 
@@ -41,6 +43,7 @@ final class AppExtension extends AbstractExtension
             new TwigFunction('can', $this->can(...)),
             new TwigFunction('percent', $this->percent(...)),
             new TwigFunction('versioned_asset', $this->versionedAsset(...)),
+            new TwigFunction('company_settings', $this->settingsProvider->company(...)),
         ];
     }
 

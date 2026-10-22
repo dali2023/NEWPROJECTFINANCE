@@ -55,6 +55,8 @@ security:
         - { path: ^/mot-de-passe-oublie, roles: PUBLIC_ACCESS }
         - { path: ^/reinitialiser-mot-de-passe, roles: PUBLIC_ACCESS }
         - { path: ^/health$, roles: PUBLIC_ACCESS }
+        # Logo de la société, utilisé aussi dans les emails (aucune donnée sensible)
+        - { path: ^/company/logo$, roles: PUBLIC_ACCESS }
         # Tout le reste exige une session authentifiée
         - { path: ^/, roles: ROLE_USER }
 

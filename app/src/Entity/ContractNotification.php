@@ -28,9 +28,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Index(name: 'idx_contract_notifications_type', columns: ['notification_type'])]
 #[ORM\Index(name: 'idx_contract_notifications_trigger', columns: ['trigger_date'])]
 #[ORM\Index(name: 'idx_contract_notifications_recipient', columns: ['recipient_user_id'])]
+#[ORM\Index(name: 'idx_contract_notifications_email', columns: ['email_sent_at'])]
 #[ORM\HasLifecycleCallbacks]
 class ContractNotification
 {
+    public const MAX_EMAIL_ATTEMPTS = 3;
+
     use UuidIdTrait;
     use TimestampableTrait;
 
@@ -91,6 +94,18 @@ class ContractNotification
 
     #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $sentAt = null;
+
+    #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $emailSentAt = null;
+
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
+    private int $emailAttempts = 0;
+
+    #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $emailLastAttemptAt = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $emailError = null;
 
     #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $acknowledgedAt = null;
@@ -290,6 +305,47 @@ class ContractNotification
     public function getSentAt(): ?\DateTimeImmutable
     {
         return $this->sentAt;
+    }
+
+    public function getEmailSentAt(): ?\DateTimeImmutable
+    {
+        return $this->emailSentAt;
+    }
+
+    public function getEmailAttempts(): int
+    {
+        return $this->emailAttempts;
+    }
+
+    public function getEmailLastAttemptAt(): ?\DateTimeImmutable
+    {
+        return $this->emailLastAttemptAt;
+    }
+
+    public function getEmailError(): ?string
+    {
+        return $this->emailError;
+    }
+
+    public function markEmailSent(): void
+    {
+        $now = new \DateTimeImmutable();
+        $this->emailSentAt = $now;
+        $this->emailLastAttemptAt = $now;
+        $this->emailError = null;
+        ++$this->emailAttempts;
+    }
+
+    public function markEmailFailed(string $error): void
+    {
+        $this->emailLastAttemptAt = new \DateTimeImmutable();
+        $this->emailError = $error;
+        ++$this->emailAttempts;
+    }
+
+    public function canRetryEmail(): bool
+    {
+        return null === $this->emailSentAt && $this->emailAttempts < self::MAX_EMAIL_ATTEMPTS;
     }
 
     public function getAcknowledgedAt(): ?\DateTimeImmutable

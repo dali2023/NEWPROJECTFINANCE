@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% set company = company_settings() %}
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -10,10 +11,16 @@
 <div class="auth">
     <aside class="auth__aside">
         <div class="auth__brand">
-            <div class="sidebar__logo">ONE</div>
+            {% if company.hasLogo %}
+                <img class="sidebar__logo sidebar__logo--image"
+                     src="{{ path('app_company_logo') }}?v={{ company.updatedAt ? company.updatedAt|date('U') : '1' }}"
+                     alt="{{ company.displayName }}">
+            {% else %}
+                <div class="sidebar__logo">{{ company.initials }}</div>
+            {% endif %}
             <div>
-                <div class="sidebar__title">Finance &amp; Project Control</div>
-                <div class="sidebar__subtitle">ONE ERP SARL</div>
+                <div class="sidebar__title">{{ company.displayName }}</div>
+                <div class="sidebar__subtitle">Finance &amp; Project Control</div>
             </div>
         </div>
 

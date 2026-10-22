@@ -26,12 +26,12 @@ les exports Excel et l'impression étant disponibles.
 
 | Indicateur | Valeur |
 |---|---|
-| Tests automatisés | **77 tests, 307 assertions — OK** |
+| Tests automatisés | **88 tests, 368 assertions — OK** |
 | Contrôle du conteneur Symfony | `lint:container` OK |
-| Syntaxe Twig | 66 fichiers valides |
+| Syntaxe Twig | 72 fichiers valides |
 | Schéma Doctrine | `doctrine:schema:validate` OK |
-| Migrations | 2 migrations appliquées (dev et test) |
-| Permissions | 48 permissions, 5 rôles par défaut |
+| Migrations | 3 migrations appliquées (dev et test) |
+| Permissions | 49 permissions, 5 rôles par défaut |
 | Couverture livrée | socle, module 15, facturation, charges, trésorerie, associés |
 
 ## 2. Fonctionnalités livrées
@@ -41,7 +41,7 @@ les exports Excel et l'impression étant disponibles.
 - Connexion par identifiant **ou** adresse électronique, déconnexion.
 - Comptes utilisateurs : création, modification, activation/désactivation,
   réinitialisation du mot de passe par un administrateur.
-- Rôles système et permissions unitaires stockés en base (48 permissions,
+- Rôles système et permissions unitaires stockés en base (49 permissions,
   5 rôles par défaut).
 - Contrôle des permissions **côté serveur** (voters Symfony), et non seulement
   masquage des boutons.
@@ -102,6 +102,8 @@ les exports Excel et l'impression étant disponibles.
   prise en charge, résolution et classement sans objet.
 - Alertes paramétrables dans `config/packages/contract_alerts.yaml` et
   idempotentes (voir [`08-parametrage-alertes.md`](08-parametrage-alertes.md)).
+- Envoi des rappels par email, manuel ou planifié, avec suivi des tentatives et
+  des erreurs dans le centre de notifications.
 
 ### 2.4. Facturation (M04)
 
@@ -145,10 +147,10 @@ les exports Excel et l'impression étant disponibles.
 
 - Environnement Docker Compose reproductible (PHP-FPM, Nginx, PostgreSQL,
   Mailpit, Adminer optionnel).
-- Jeu de démonstration idempotent `app:demo:seed` : 48 permissions, 5 rôles,
+- Jeu de démonstration idempotent `app:demo:seed` : 49 permissions, 5 rôles,
   5 utilisateurs, référentiels, projets, contrats, opérations de maintenance,
   factures, charges, comptes et opérations d'associés.
-- Deux migrations appliquées en développement et en test.
+- Trois migrations appliquées en développement et en test.
 - Tests isolés par transaction PostgreSQL, sans réinitialisation manuelle de la
   base entre deux exécutions.
 
@@ -166,6 +168,24 @@ les exports Excel et l'impression étant disponibles.
 - Impression de tous les écrans de liste et de détail via le bouton
   **Imprimer** ; feuille de style papier dédiée (navigation masquée, en-têtes de
   tableau répétés, lignes non coupées, A4).
+
+### 2.10. Paramétrage société et emails
+
+- **Administration → Société** : raison sociale, nom commercial, matricule
+  fiscal, email, téléphones, adresse et logo. Ces données alimentent la barre
+  latérale, l'écran de connexion, l'en-tête d'impression et les emails.
+- Logo stocké hors de `public/`, servi par `/company/logo`, remplaçable et
+  supprimable sans perte de la fiche.
+- **Administration → Email** : serveur SMTP, port, chiffrement (aucun,
+  STARTTLS, TLS implicite), identifiants, adresse et nom d'expédition.
+- Mot de passe SMTP chiffré en AES-256-GCM avec une clé dérivée de
+  `APP_SECRET` ; jamais réaffiché, conservation si le champ reste vide.
+- Email de test utilisant les paramètres enregistrés, même si l'envoi
+  automatique est désactivé.
+- Rappels contractuels envoyés par `app:contracts:send-reminders` ou par
+  l'action **Envoyer les rappels**. Les échecs sont enregistrés et réessayés
+  trois fois ; une nouvelle configuration active remet le compteur à zéro.
+- Guide dédié : [`09-parametrage-societe-email.md`](09-parametrage-societe-email.md).
 
 ## 3. Décisions techniques
 
@@ -191,7 +211,7 @@ docker compose exec -u application php php bin/phpunit
 Résultat attendu :
 
 ```
-OK (77 tests, 307 assertions)
+OK (88 tests, 368 assertions)
 ```
 
 Les tests couvrent notamment :
@@ -211,7 +231,10 @@ Les tests couvrent notamment :
 - la validation et le règlement d'une opération d'associé ;
 - la génération d'un classeur Excel valide (en-têtes, totaux, formats) et la
   disponibilité des quinze routes d'export ;
-- la présence des actions d'export et d'impression sur les écrans.
+- la présence des actions d'export et d'impression sur les écrans ;
+- le paramétrage société avec logo, le chiffrement et la conservation du mot de
+  passe SMTP, les modes de chiffrement du transport, l'email de test, le refus
+  d'envoi lorsque les emails sont désactivés et le rendu des emails de rappel.
 
 Le détail des scénarios figure dans [`04-recette.md`](04-recette.md).
 
@@ -223,8 +246,10 @@ Le détail des scénarios figure dans [`04-recette.md`](04-recette.md).
 2. **Exports PDF non livrés.** Les exports Excel (`.xlsx`) et l'impression
    navigateur sont disponibles sur toutes les listes et les fiches ; seule la
    génération PDF serveur reste à livrer.
-3. **Courriels métier non envoyés.** Le transport Mailpit est configuré ; les
-   alertes contractuelles sont consultables dans l'application uniquement.
+3. **Rappels planifiés par cron externe.** Les emails contractuels sont
+   envoyés, mais la périodicité dépend d'un cron ou d'un ordonnanceur
+   d'infrastructure ; aucun démon interne n'est fourni. En développement,
+   Mailpit capture les messages.
 4. **Imputation multi-factures non livrée.** Un encaissement est rattaché à une
    facture.
 5. **Transfert interne de trésorerie non exposé.** La neutralité est vérifiée
@@ -258,3 +283,4 @@ Le détail des scénarios figure dans [`04-recette.md`](04-recette.md).
 | 22/10/2026 | Finances : facturation, charges, trésorerie, associés, migration, jeu de démonstration et recette REC-021 à REC-036. |
 | 22/10/2026 | Calendrier contractuel : agenda par jour et vue mensuelle navigable, jalons inclus. |
 | 22/10/2026 | Exports Excel sur toutes les listes et impression de tous les écrans, avec prise en compte des filtres et du périmètre de droits. |
+| 22/10/2026 | Paramétrage société (identité, logo, coordonnées), paramètres SMTP chiffrés, email de test et envoi planifié des rappels contractuels. |

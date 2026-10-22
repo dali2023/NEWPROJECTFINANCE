@@ -102,6 +102,51 @@ class ContractNotificationRepository extends ServiceEntityRepository
         return $this->findOneBy(['uniqueKey' => $key]);
     }
 
+    /**
+     * Alertes actives dont l'email de rappel reste à envoyer.
+     *
+     * @return list<ContractNotification>
+     */
+    public function findEmailCandidates(int $limit, \DateTimeImmutable $today): array
+    {
+        return $this->createQueryBuilder('n')
+            ->addSelect('c', 'u')
+            ->leftJoin('n.contract', 'c')
+            ->leftJoin('n.recipient', 'u')
+            ->where('n.status IN (:active)')
+            ->andWhere('n.emailSentAt IS NULL')
+            ->andWhere('n.emailAttempts < :maxAttempts')
+            ->andWhere('n.triggerDate <= :today')
+            ->andWhere('u.email IS NOT NULL')
+            ->andWhere('u.email != :empty')
+            ->setParameter('active', [ContractNotificationStatus::Pending->value, ContractNotificationStatus::InProgress->value])
+            ->setParameter('maxAttempts', ContractNotification::MAX_EMAIL_ATTEMPTS)
+            ->setParameter('today', $today->setTime(0, 0))
+            ->setParameter('empty', '')
+            ->orderBy('n.triggerDate', 'ASC')
+            ->addOrderBy('n.severity', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Réinitialise les tentatives d'envoi des rappels bloqués après trois
+     * échecs, après correction de la configuration SMTP.
+     */
+    public function resetFailedEmailAttempts(): int
+    {
+        return (int) $this->createQueryBuilder('n')
+            ->update()
+            ->set('n.emailAttempts', 0)
+            ->set('n.emailError', 'NULL')
+            ->set('n.emailLastAttemptAt', 'NULL')
+            ->where('n.emailSentAt IS NULL')
+            ->andWhere('n.emailError IS NOT NULL')
+            ->getQuery()
+            ->execute();
+    }
+
     /** @return list<ContractNotification> */
     public function findActive(?\DateTimeImmutable $today = null, ?int $limit = null): array
     {

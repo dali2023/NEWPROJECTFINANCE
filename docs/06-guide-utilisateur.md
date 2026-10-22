@@ -34,7 +34,7 @@ Le bandeau latéral regroupe :
   notifications.
 - **Finance** : factures, charges, trésorerie, associés.
 - **Administration** : exercices, types de projet, utilisateurs, rôles, audit,
-  selon vos permissions.
+  société et paramètres email, selon vos permissions.
 
 Le bandeau supérieur affiche votre nom, le bouton **Imprimer** et le bouton
 **Déconnexion**. Les montants sont exprimés en dinars tunisiens (TND).
@@ -297,6 +297,41 @@ module, résultat ou période. Chaque ligne indique l'auteur, l'action,
 l'horodatage, l'adresse IP et, le cas échéant, les valeurs avant/après.
 
 Les refus d'accès apparaissent avec l'action `deny` et le résultat `denied`.
+
+### 8.6. Société et paramètres email
+
+Deux écrans distincts, réservés à la permission `admin.settings` :
+
+**Administration → Société** renseigne la raison sociale, le nom commercial, le
+matricule fiscal, l'email de contact, les téléphones, l'adresse et le logo. Ces
+informations alimentent la barre latérale, l'écran de connexion, l'en-tête
+d'impression et les emails de rappel. Le logo est stocké hors du répertoire
+public ; il est servi par une route dédiée et peut être supprimé sans effacer
+la fiche.
+
+**Administration → Email** configure le serveur SMTP des rappels contractuels :
+hôte, port, chiffrement, identifiants, adresse et nom d'expédition. Le mot de
+passe est chiffré et n'est jamais réaffiché ; laisser le champ vide conserve la
+valeur existante. Le bouton **Envoyer un email de test** valide la
+configuration avec les paramètres déjà enregistrés, même si l'envoi automatique
+est désactivé.
+
+Pour activer les rappels :
+
+1. renseigner et enregistrer les paramètres SMTP ;
+2. envoyer un email de test et vérifier sa réception ;
+3. cocher **Activer l'envoi automatique** puis enregistrer ;
+4. planifier la commande `app:contracts:send-reminders` (toutes les 15 minutes
+   par exemple) ou utiliser **Envoyer les rappels** dans le centre de
+   notifications.
+
+Le centre de notifications indique, pour chaque alerte, si l'email est envoyé,
+en attente ou en échec. Un échec est réessayé aux exécutions suivantes, dans la
+limite de trois tentatives. Une nouvelle configuration email activée remet le
+compteur à zéro.
+
+Le détail des champs, du chiffrement, de la planification et du dépannage figure
+dans [`09-parametrage-societe-email.md`](09-parametrage-societe-email.md).
 
 ## 9. Exporter et imprimer
 

@@ -23,6 +23,16 @@
                     <input type="hidden" name="_token" value="{{ csrf_token('contract_notifications_generate') }}">
                     <button class="btn btn--primary" type="submit">Générer les alertes</button>
                 </form>
+                <form method="post" action="{{ path('app_contract_notification_send_reminders') }}" class="inline-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('contract_notifications_send_reminders') }}">
+                    <button class="btn btn--print" type="submit">
+                        <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 6h16v12H4z"/>
+                            <path d="m4 7 8 6 8-6"/>
+                        </svg>
+                        Envoyer les rappels
+                    </button>
+                </form>
             {% endif %}
         </div>
     </div>
@@ -104,6 +114,13 @@
                             <td>
                                 <span class="badge {{ notification.status.badgeClass }}">{{ notification.status.label }}</span>
                                 {% if notification.closedAt %}<div class="cell-sub">{{ notification.closedAt|date('d/m/Y') }}</div>{% endif %}
+                                {% if notification.emailSentAt %}
+                                    <div class="cell-sub">Email envoyé le {{ notification.emailSentAt|date('d/m/Y H:i') }}</div>
+                                {% elseif notification.emailError %}
+                                    <div class="cell-sub" style="color: var(--danger);" title="{{ notification.emailError }}">Échec email ({{ notification.emailAttempts }}/3)</div>
+                                {% elseif notification.canRetryEmail %}
+                                    <div class="cell-sub muted">Email non envoyé</div>
+                                {% endif %}
                             </td>
                             <td>{{ notification.recipient ? notification.recipient.fullName : '—' }}</td>
                             <td class="actions" style="min-width:12rem;">

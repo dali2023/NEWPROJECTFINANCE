@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rappel contractuel</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#1f2933;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:24px 12px;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #e4e7ec;border-radius:8px;overflow:hidden;">
+                <tr>
+                    <td style="padding:20px 24px;border-bottom:3px solid #0b5c56;">
+                        {% if logo_url %}
+                            <img src="{{ logo_url }}" alt="{{ company.displayName }}" style="max-height:52px;max-width:180px;display:block;margin-bottom:10px;">
+                        {% endif %}
+                        <div style="font-size:16px;font-weight:700;color:#0b5c56;">{{ company.legalName }}</div>
+                        {% if company.formattedAddress %}
+                            <div style="font-size:12px;color:#667085;margin-top:3px;">{{ company.formattedAddress }}</div>
+                        {% endif %}
+                        <div style="font-size:12px;color:#667085;margin-top:3px;">
+                            {% if company.phones %}{{ company.phones|join(' · ') }}{% endif %}
+                            {% if company.email %}{% if company.phones %} · {% endif %}{{ company.email }}{% endif %}
+                            {% if company.taxId %}<br>Matricule fiscal : {{ company.taxId }}{% endif %}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:24px;">
+                        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#b54708;margin-bottom:6px;">
+                            Rappel contractuel
+                        </div>
+                        <h1 style="font-size:20px;line-height:1.3;margin:0 0 8px;color:#101828;">
+                            {{ notification.title }}
+                        </h1>
+                        <p style="font-size:14px;line-height:1.6;margin:0 0 16px;">
+                            Bonjour {{ recipient.fullName }},
+                        </p>
+                        <p style="font-size:14px;line-height:1.6;margin:0 0 18px;">
+                            {{ notification.message }}
+                        </p>
+
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;margin-bottom:20px;">
+                            <tr>
+                                <td style="padding:7px 0;color:#667085;width:42%;">Contrat</td>
+                                <td style="padding:7px 0;font-weight:700;">{{ contract.reference }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:7px 0;color:#667085;">Intitulé</td>
+                                <td style="padding:7px 0;">{{ contract.title }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:7px 0;color:#667085;">Client</td>
+                                <td style="padding:7px 0;">{{ contract.client ? contract.client.name : '—' }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:7px 0;color:#667085;">Événement</td>
+                                <td style="padding:7px 0;">{{ notification.notificationType.label }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:7px 0;color:#667085;">Date de l’échéance</td>
+                                <td style="padding:7px 0;font-weight:700;">{{ notification.eventDate|date('d/m/Y') }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:7px 0;color:#667085;">Délai</td>
+                                <td style="padding:7px 0;">{{ notification.delayLabel }}</td>
+                            </tr>
+                        </table>
+
+                        {% if contract_url %}
+                            <p style="margin:0 0 8px;">
+                                <a href="{{ contract_url }}"
+                                   style="display:inline-block;background:#0b5c56;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:10px 18px;border-radius:6px;">
+                                    Consulter le contrat
+                                </a>
+                            </p>
+                        {% endif %}
+
+                        <p style="font-size:12px;line-height:1.5;color:#667085;margin:20px 0 0;">
+                            Cet email est envoyé automatiquement par {{ company.displayName }}.
+                            Merci de ne pas y répondre directement si l’adresse d’expédition n’est pas surveillée.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
