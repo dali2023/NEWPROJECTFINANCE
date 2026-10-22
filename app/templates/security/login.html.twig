@@ -1,0 +1,36 @@
+{% extends 'layout/auth.html.twig' %}
+
+{% block title %}Connexion{% endblock %}
+
+{% block auth_form %}
+    <h1>Connexion</h1>
+    <p class="lead">Accédez au pilotage financier de ONE ERP.</p>
+
+    {% if error %}
+        <div class="alert alert--error" role="alert">
+            {{ error.messageKey|trans(error.messageData, 'security') }}
+        </div>
+    {% endif %}
+
+    <form method="post" action="{{ path('app_login') }}" novalidate>
+        <div class="field">
+            <label for="username">Identifiant ou adresse électronique</label>
+            <input type="text" id="username" name="_username" value="{{ last_username }}"
+                   autocomplete="username" required autofocus>
+        </div>
+
+        <div class="field">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" name="_password" autocomplete="current-password" required>
+        </div>
+
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+        <button class="btn btn--primary" type="submit" style="width:100%; justify-content:center;">Se connecter</button>
+    </form>
+
+    <p class="auth__footer">
+        Mot de passe oublié ? Contactez un administrateur pour la réinitialisation de votre compte.
+        <br>Toute connexion est journalisée conformément à la politique de sécurité.
+    </p>
+{% endblock %}

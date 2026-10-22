@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier l’exercice {{ fiscal_year.label }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_admin_fiscal_year_index') }}">Exercices</a> / {{ fiscal_year.label }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Modifier l’exercice</h1>
+            <div class="page-head__subtitle">
+                {{ fiscal_year.label }}
+                <span class="badge {{ fiscal_year.status.badgeClass }}">{{ fiscal_year.status.label }}</span>
+            </div>
+        </div>
+    </div>
+
+    <section class="card" style="max-width:640px;">
+        <div class="card__body">
+            {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+                {{ form_row(form.label) }}
+                {{ form_row(form.startDate) }}
+                {{ form_row(form.endDate) }}
+                {{ form_row(form.status) }}
+
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit">Enregistrer</button>
+                    <a class="btn btn--ghost" href="{{ path('app_admin_fiscal_year_index') }}">Annuler</a>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </section>
+{% endblock %}

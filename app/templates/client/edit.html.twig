@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier {{ client.name }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_client_index') }}">Clients</a> / <a href="{{ path('app_client_show', {id: client.idString}) }}">{{ client.code }}</a> / Modifier{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Modifier le client</h1>
+            <div class="page-head__subtitle">{{ client.code }} — {{ client.name }}</div>
+        </div>
+        <div class="page-head__actions">
+            <a class="btn" href="{{ path('app_client_show', {id: client.idString}) }}">Voir la fiche</a>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        <section class="card">
+            <div class="card__header"><div class="card__title">Identification</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.code) }}
+                    {{ form_row(form.name) }}
+                    {{ form_row(form.clientType) }}
+                    {{ form_row(form.taxIdentifier) }}
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top:1rem;">
+            <div class="card__header"><div class="card__title">Coordonnées et conditions</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.contactName) }}
+                    {{ form_row(form.email) }}
+                    {{ form_row(form.phone) }}
+                    {{ form_row(form.address) }}
+                    {{ form_row(form.city) }}
+                    {{ form_row(form.postalCode) }}
+                    {{ form_row(form.country) }}
+                    {{ form_row(form.paymentTermsDays) }}
+                </div>
+                {{ form_row(form.isActive) }}
+                {{ form_row(form.notes) }}
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer les modifications</button>
+            <a class="btn btn--ghost" href="{{ path('app_client_show', {id: client.idString}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

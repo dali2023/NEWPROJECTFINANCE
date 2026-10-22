@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau fournisseur{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_supplier_index') }}">Fournisseurs</a> / Nouveau{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Nouveau fournisseur</h1>
+            <div class="page-head__subtitle">Les champs marqués d’un astérisque sont obligatoires.</div>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        <section class="card">
+            <div class="card__header"><div class="card__title">Identification</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.code) }}
+                    {{ form_row(form.name) }}
+                    {{ form_row(form.taxIdentifier) }}
+                    {{ form_row(form.serviceCategory) }}
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top:1rem;">
+            <div class="card__header"><div class="card__title">Coordonnées et conditions</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.email) }}
+                    {{ form_row(form.phone) }}
+                    {{ form_row(form.address) }}
+                    {{ form_row(form.city) }}
+                    {{ form_row(form.country) }}
+                    {{ form_row(form.paymentTermsDays) }}
+                </div>
+                {{ form_row(form.isActive) }}
+                {{ form_row(form.notes) }}
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer le fournisseur</button>
+            <a class="btn btn--ghost" href="{{ path('app_supplier_index') }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

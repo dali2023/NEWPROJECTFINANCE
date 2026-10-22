@@ -1,0 +1,117 @@
+{% set route = app.request.attributes.get('_route') %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Tableau de bord{% endblock %} · {{ app_name }}</title>
+    <link rel="stylesheet" href="{{ asset('assets/app.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230b5c56'/><text x='16' y='22' font-size='14' font-family='Arial' fill='white' text-anchor='middle'>1</text></svg>">
+    <script src="{{ asset('assets/app.js') }}" defer></script>
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="sidebar__brand">
+            <div class="sidebar__logo">ONE</div>
+            <div>
+                <div class="sidebar__title">Finance &amp;<br>Project Control</div>
+                <div class="sidebar__subtitle">ONE ERP SARL</div>
+            </div>
+        </div>
+
+        <nav class="sidebar__nav" aria-label="Navigation principale">
+            <div class="nav-group">
+                <div class="nav-group__label">Pilotage</div>
+                <a class="nav-link {{ route == 'app_dashboard' ? 'is-active' }}" href="{{ path('app_dashboard') }}">
+                    <span class="nav-link__icon">◧</span> Tableau de bord
+                </a>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group__label">Projets et tiers</div>
+                {% if can('project.view_all') or can('project.view_own') %}
+                    <a class="nav-link {{ route starts with 'app_project_' ? 'is-active' }}" href="{{ path('app_project_index') }}">
+                        <span class="nav-link__icon">▤</span> Projets
+                    </a>
+                {% endif %}
+                {% if can('client.view') %}
+                    <a class="nav-link {{ route starts with 'app_client_' ? 'is-active' }}" href="{{ path('app_client_index') }}">
+                        <span class="nav-link__icon">◍</span> Clients
+                    </a>
+                {% endif %}
+                {% if can('supplier.view') %}
+                    <a class="nav-link {{ route starts with 'app_supplier_' ? 'is-active' }}" href="{{ path('app_supplier_index') }}">
+                        <span class="nav-link__icon">◌</span> Fournisseurs
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group__label">Finance — phases 3 à 5</div>
+                <span class="nav-link" style="opacity:.45; cursor:not-allowed;">Facturation <span class="tag" style="margin-left:auto;">à venir</span></span>
+                <span class="nav-link" style="opacity:.45; cursor:not-allowed;">Charges <span class="tag" style="margin-left:auto;">à venir</span></span>
+                <span class="nav-link" style="opacity:.45; cursor:not-allowed;">Trésorerie <span class="tag" style="margin-left:auto;">à venir</span></span>
+                <span class="nav-link" style="opacity:.45; cursor:not-allowed;">Associés <span class="tag" style="margin-left:auto;">à venir</span></span>
+            </div>
+
+            {% if can('admin.referentials') or can('admin.users') or can('admin.audit') or can('fiscal_year.close') %}
+                <div class="nav-group">
+                    <div class="nav-group__label">Administration</div>
+                    {% if can('admin.referentials') or can('fiscal_year.close') %}
+                        <a class="nav-link {{ route starts with 'app_admin_fiscal_year_' ? 'is-active' }}" href="{{ path('app_admin_fiscal_year_index') }}">
+                            <span class="nav-link__icon">◫</span> Exercices
+                        </a>
+                    {% endif %}
+                    {% if can('admin.referentials') %}
+                        <a class="nav-link {{ route starts with 'app_admin_project_type_' ? 'is-active' }}" href="{{ path('app_admin_project_type_index') }}">
+                            <span class="nav-link__icon">◈</span> Types de projet
+                        </a>
+                    {% endif %}
+                    {% if can('admin.users') %}
+                        <a class="nav-link {{ route starts with 'app_admin_user_' ? 'is-active' }}" href="{{ path('app_admin_user_index') }}">
+                            <span class="nav-link__icon">◉</span> Utilisateurs
+                        </a>
+                        <a class="nav-link {{ route starts with 'app_admin_role_' ? 'is-active' }}" href="{{ path('app_admin_role_index') }}">
+                            <span class="nav-link__icon">◎</span> Rôles et permissions
+                        </a>
+                    {% endif %}
+                    {% if can('admin.audit') %}
+                        <a class="nav-link {{ route starts with 'app_admin_audit_' ? 'is-active' }}" href="{{ path('app_admin_audit_index') }}">
+                            <span class="nav-link__icon">≡</span> Journal d’audit
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar__footer">
+            Version 1.0 · {{ app_currency }} · {{ app_locale|upper }}
+        </div>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <div class="breadcrumb">{% block breadcrumb %}{% endblock %}</div>
+            {% if app.user %}
+                <div class="topbar__user">
+                    <div class="avatar">{{ app.user.fullName|slice(0, 2)|upper }}</div>
+                    <div class="user-meta">
+                        <div>{{ app.user.fullName }}</div>
+                        <div class="user-meta__role">
+                            {% for role in app.user.assignedRoles %}{{ role.label }}{% if not loop.last %} · {% endif %}{% endfor %}
+                        </div>
+                    </div>
+                    <a class="btn btn--ghost btn--sm" href="{{ path('app_logout') }}">Déconnexion</a>
+                </div>
+            {% endif %}
+        </header>
+
+        <main class="content">
+            {% include 'partials/_flash.html.twig' %}
+            {% block body %}{% endblock %}
+        </main>
+    </div>
+</div>
+</body>
+</html>

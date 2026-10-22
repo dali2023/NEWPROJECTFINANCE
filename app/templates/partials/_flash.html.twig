@@ -1,0 +1,12 @@
+{% for type, messages in app.flashes %}
+    {% set css = {
+        'success': 'alert--success',
+        'error': 'alert--error',
+        'danger': 'alert--error',
+        'warning': 'alert--warning',
+        'info': 'alert--info',
+    }[type]|default('alert--info') %}
+    {% for message in messages %}
+        <div class="alert {{ css }}" role="status">{{ message }}</div>
+    {% endfor %}
+{% endfor %}

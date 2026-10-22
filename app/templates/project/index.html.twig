@@ -1,0 +1,120 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Projets{% endblock %}
+{% block breadcrumb %}Projets / Liste{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Projets et contrats</h1>
+            <div class="page-head__subtitle">
+                {{ result.total }} projet{{ result.total > 1 ? 's' : '' }}
+                {% if scope_limited %}
+                    — restreint aux projets dont vous êtes responsable ou membre
+                {% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('project.manage') %}
+                <a class="btn btn--primary" href="{{ path('app_project_new') }}">Nouveau projet</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <section class="card">
+        <form method="get" action="{{ path('app_project_index') }}" class="toolbar">
+            <div class="field">
+                <label for="q">Recherche</label>
+                <input type="text" id="q" name="q" value="{{ filters.term }}" placeholder="Référence, intitulé, contrat">
+            </div>
+            <div class="field">
+                <label for="statut">Statut</label>
+                <select id="statut" name="statut" data-auto-submit>
+                    <option value="">Tous les statuts</option>
+                    {% for status in statuses %}
+                        <option value="{{ status.value }}" {{ filters.status and filters.status.value == status.value ? 'selected' }}>{{ status.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="client">Client</label>
+                <select id="client" name="client" data-auto-submit>
+                    <option value="">Tous les clients</option>
+                    {% for client in clients %}
+                        <option value="{{ client.idString }}" {{ filters.client and filters.client.idString == client.idString ? 'selected' }}>{{ client.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="type">Type</label>
+                <select id="type" name="type" data-auto-submit>
+                    <option value="">Tous les types</option>
+                    {% for project_type in project_types %}
+                        <option value="{{ project_type.idString }}" {{ filters.type and filters.type.idString == project_type.idString ? 'selected' }}>{{ project_type.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if not scope_limited %}
+                <div class="field">
+                    <label for="responsable">Responsable</label>
+                    <select id="responsable" name="responsable" data-auto-submit>
+                        <option value="">Tous</option>
+                        {% for manager in managers %}
+                            <option value="{{ manager.idString }}" {{ filters.manager and filters.manager.idString == manager.idString ? 'selected' }}>{{ manager.fullName }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endif %}
+            <button class="btn" type="submit">Filtrer</button>
+            {% if filters.term or filters.status or filters.client or filters.type or filters.manager %}
+                <a class="btn btn--ghost" href="{{ path('app_project_index') }}">Réinitialiser</a>
+            {% endif %}
+        </form>
+
+        {% if result.items is empty %}
+            <div class="empty">
+                Aucun projet ne correspond à ces critères.
+                {% if can('project.manage') %}
+                    <br><a href="{{ path('app_project_new') }}">Créer un projet</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Référence</th>
+                        <th>Intitulé</th>
+                        <th>Client</th>
+                        <th>Responsable</th>
+                        <th>Statut</th>
+                        <th class="num">Montant HT</th>
+                        <th class="num">Budget</th>
+                        <th class="actions"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for project in result.items %}
+                        <tr>
+                            <td><a class="mono" href="{{ path('app_project_show', {id: project.idString}) }}">{{ project.code }}</a></td>
+                            <td>
+                                <div class="cell-main">{{ project.name }}</div>
+                                {% if project.contractReference %}<div class="cell-sub">Contrat {{ project.contractReference }}</div>{% endif %}
+                            </td>
+                            <td>{{ project.client ? project.client.name : '—' }}</td>
+                            <td>{{ project.manager ? project.manager.fullName : '—' }}</td>
+                            <td><span class="badge {{ project.status.badgeClass }}">{{ project.status.label }}</span></td>
+                            <td class="num">{{ project.contractAmountHt|money(project.currencyCode) }}</td>
+                            <td class="num muted">{{ project.budgetAmount|money(project.currencyCode) }}</td>
+                            <td class="actions">
+                                <a class="btn btn--ghost btn--sm" href="{{ path('app_project_show', {id: project.idString}) }}">Ouvrir</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

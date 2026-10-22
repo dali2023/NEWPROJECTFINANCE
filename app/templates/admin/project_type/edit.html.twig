@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier {{ project_type.label }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_admin_project_type_index') }}">Types de projet</a> / {{ project_type.code }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Modifier le type de projet</h1>
+            <div class="page-head__subtitle"><span class="mono">{{ project_type.code }}</span> — {{ project_type.label }}</div>
+        </div>
+    </div>
+
+    <section class="card" style="max-width:640px;">
+        <div class="card__body">
+            {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+                {{ form_row(form.code) }}
+                {{ form_row(form.label) }}
+                {{ form_row(form.description) }}
+                {{ form_row(form.sortOrder) }}
+                {{ form_row(form.isActive) }}
+
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit">Enregistrer</button>
+                    <a class="btn btn--ghost" href="{{ path('app_admin_project_type_index') }}">Annuler</a>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </section>
+{% endblock %}

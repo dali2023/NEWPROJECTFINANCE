@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier {{ user.username }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_admin_user_index') }}">Utilisateurs</a> / {{ user.username }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Modifier le compte</h1>
+            <div class="page-head__subtitle">
+                {{ user.fullName }} — <span class="mono">{{ user.username }}</span>
+                {% if user.isActive %}
+                    <span class="badge badge--success">Actif</span>
+                {% else %}
+                    <span class="badge badge--muted">Désactivé</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <section class="card" style="max-width:760px;">
+        <div class="card__body">
+            {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+                <div class="form-grid">
+                    {{ form_row(form.fullName) }}
+                    {{ form_row(form.username) }}
+                    {{ form_row(form.email) }}
+                </div>
+                {{ form_row(form.assignedRoles) }}
+                {{ form_row(form.isActive) }}
+
+                <div class="divider"></div>
+                <div class="section-title">Réinitialisation du mot de passe</div>
+                <div class="help" style="margin-bottom:.75rem;">
+                    Laisser vide pour conserver le mot de passe actuel.
+                </div>
+                <div class="form-grid">
+                    {{ form_row(form.plainPassword.first) }}
+                    {{ form_row(form.plainPassword.second) }}
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit">Enregistrer</button>
+                    <a class="btn btn--ghost" href="{{ path('app_admin_user_index') }}">Annuler</a>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </section>
+{% endblock %}

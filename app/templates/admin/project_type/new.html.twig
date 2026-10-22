@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau type de projet{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_admin_project_type_index') }}">Types de projet</a> / Nouveau{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Nouveau type de projet</h1>
+        </div>
+    </div>
+
+    <section class="card" style="max-width:640px;">
+        <div class="card__body">
+            {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+                {{ form_row(form.code) }}
+                {{ form_row(form.label) }}
+                {{ form_row(form.description) }}
+                {{ form_row(form.sortOrder) }}
+                {{ form_row(form.isActive) }}
+
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit">Créer le type</button>
+                    <a class="btn btn--ghost" href="{{ path('app_admin_project_type_index') }}">Annuler</a>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </section>
+{% endblock %}

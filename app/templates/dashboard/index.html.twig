@@ -1,0 +1,164 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de bord{% endblock %}
+{% block breadcrumb %}Pilotage / Tableau de bord{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Tableau de bord</h1>
+            <div class="page-head__subtitle">
+                {% if fiscal_year %}
+                    Exercice en cours : <strong>{{ fiscal_year.label }}</strong>
+                    <span class="badge {{ fiscal_year.status.badgeClass }}">{{ fiscal_year.status.label }}</span>
+                {% else %}
+                    <span class="badge badge--warning">Aucun exercice ouvert</span>
+                    {% if can('admin.referentials') %}
+                        <a href="{{ path('app_admin_fiscal_year_new') }}">Créer un exercice</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('project.manage') %}
+                <a class="btn btn--primary" href="{{ path('app_project_new') }}">Nouveau projet</a>
+            {% endif %}
+            {% if can('client.manage') %}
+                <a class="btn" href="{{ path('app_client_new') }}">Nouveau client</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid--stats" style="margin-bottom:1rem;">
+        <div class="card stat">
+            <div class="stat__label">Contrats signés (HT)</div>
+            <div class="stat__value">{{ contract_total|money(app_currency) }}</div>
+            <div class="stat__hint">Projets au statut contractuel — opportunités exclues</div>
+        </div>
+
+        <div class="card stat">
+            <div class="stat__label">Projets suivis</div>
+            <div class="stat__value">{{ project_count }}</div>
+            <div class="stat__hint">Tous statuts confondus</div>
+        </div>
+
+        <div class="card stat stat--muted">
+            <div class="stat__label">Facturation (phase 3)</div>
+            <div class="stat__value">Module à venir</div>
+            <div class="stat__hint">Chiffre d’affaires facturé non disponible</div>
+        </div>
+
+        <div class="card stat stat--muted">
+            <div class="stat__label">Trésorerie (phase 4)</div>
+            <div class="stat__value">Module à venir</div>
+            <div class="stat__hint">Solde consolidé non disponible</div>
+        </div>
+    </div>
+
+    <div class="grid grid--sidebar">
+        <section class="card">
+            <div class="card__header">
+                <div class="card__title">Projets récents</div>
+                {% if can('project.view_all') or can('project.view_own') %}
+                    <a class="btn btn--ghost btn--sm" href="{{ path('app_project_index') }}">Tout voir</a>
+                {% endif %}
+            </div>
+            {% if recent_projects is empty %}
+                <div class="empty">
+                    Aucun projet enregistré pour le moment.
+                    {% if can('project.manage') %}
+                        <br><a href="{{ path('app_project_new') }}">Créer le premier projet</a>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Référence</th>
+                            <th>Intitulé</th>
+                            <th>Client</th>
+                            <th>Statut</th>
+                            <th class="num">Montant HT</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for project in recent_projects %}
+                            <tr>
+                                <td><a class="mono" href="{{ path('app_project_show', {id: project.idString}) }}">{{ project.code }}</a></td>
+                                <td>{{ project.name }}</td>
+                                <td>{{ project.client ? project.client.name : '—' }}</td>
+                                <td><span class="badge {{ project.status.badgeClass }}">{{ project.status.label }}</span></td>
+                                <td class="num">{{ project.contractAmountHt|money(app_currency) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+
+        <div class="grid" style="gap:1rem; align-content:start;">
+            <section class="card">
+                <div class="card__header">
+                    <div class="card__title">Répartition par statut</div>
+                </div>
+                <div class="card__body" style="display:grid; gap:.45rem;">
+                    {% for row in status_breakdown %}
+                        {% if row.count > 0 %}
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:.5rem;">
+                                <span class="badge {{ row.status.badgeClass }}">{{ row.status.label }}</span>
+                                <strong>{{ row.count }}</strong>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% if project_count == 0 %}
+                        <div class="muted" style="font-size:.85rem;">Aucun projet.</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card__header">
+                    <div class="card__title">Prochaines échéances</div>
+                </div>
+                {% if upcoming_milestones is empty %}
+                    <div class="empty">Aucun jalon planifié.</div>
+                {% else %}
+                    <div class="table-wrap">
+                        <table class="table table--compact">
+                            <tbody>
+                            {% for milestone in upcoming_milestones %}
+                                <tr>
+                                    <td>
+                                        <div class="cell-main">{{ milestone.label }}</div>
+                                        <div class="cell-sub mono">{{ milestone.project.code }}</div>
+                                    </td>
+                                    <td class="num">{{ milestone.plannedDate ? milestone.plannedDate|date('d/m/Y') : '—' }}</td>
+                                    <td class="num">{{ milestone.amountHt|money(app_currency) }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </section>
+
+            <section class="card">
+                <div class="card__header">
+                    <div class="card__title">Tiers actifs</div>
+                </div>
+                <div class="card__body" style="display:flex; gap:1.5rem;">
+                    <div>
+                        <div class="stat__label">Clients</div>
+                        <div style="font-size:1.3rem; font-weight:650;">{{ active_clients }}</div>
+                    </div>
+                    <div>
+                        <div class="stat__label">Fournisseurs</div>
+                        <div style="font-size:1.3rem; font-weight:650;">{{ active_suppliers }}</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+{% endblock %}

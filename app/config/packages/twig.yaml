@@ -1,0 +1,15 @@
+twig:
+    file_name_pattern: '*.twig'
+    globals:
+        app_name: '%app.name%'
+        app_currency: '%app.currency%'
+        app_locale: '%app.locale%'
+    form_themes:
+        - 'form/app_layout.html.twig'
+    date:
+        format: 'd/m/Y'
+        timezone: '%app.timezone%'
+    number_format:
+        decimals: 3
+        decimal_point: ','
+        thousands_separator: ' '

@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Types de projet{% endblock %}
+{% block breadcrumb %}Administration / Types de projet{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Typologie des projets</h1>
+            <div class="page-head__subtitle">Liste utilisée lors de la création des projets (§4.3).</div>
+        </div>
+        <div class="page-head__actions">
+            <a class="btn btn--primary" href="{{ path('app_admin_project_type_new') }}">Nouveau type</a>
+        </div>
+    </div>
+
+    <section class="card">
+        {% if project_types is empty %}
+            <div class="empty">
+                Aucun type de projet.
+                <br><a href="{{ path('app_admin_project_type_new') }}">Créer un type</a>
+            </div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Ordre</th>
+                        <th>Code</th>
+                        <th>Libellé</th>
+                        <th>Description</th>
+                        <th>Statut</th>
+                        <th class="actions"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for project_type in project_types %}
+                        <tr>
+                            <td class="muted">{{ project_type.sortOrder }}</td>
+                            <td><span class="mono">{{ project_type.code }}</span></td>
+                            <td class="cell-main">{{ project_type.label }}</td>
+                            <td class="muted">{{ project_type.description ?: '—' }}</td>
+                            <td>
+                                {% if project_type.isActive %}
+                                    <span class="badge badge--success">Actif</span>
+                                {% else %}
+                                    <span class="badge badge--muted">Inactif</span>
+                                {% endif %}
+                            </td>
+                            <td class="actions">
+                                <a class="btn btn--ghost btn--sm" href="{{ path('app_admin_project_type_edit', {id: project_type.idString}) }}">Modifier</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

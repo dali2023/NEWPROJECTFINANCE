@@ -1,0 +1,95 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Fournisseurs{% endblock %}
+{% block breadcrumb %}Tiers / Fournisseurs{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Fournisseurs</h1>
+            <div class="page-head__subtitle">{{ result.total }} fiche{{ result.total > 1 ? 's' : '' }} fournisseur</div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('supplier.manage') %}
+                <a class="btn btn--primary" href="{{ path('app_supplier_new') }}">Nouveau fournisseur</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <section class="card">
+        <form method="get" action="{{ path('app_supplier_index') }}" class="toolbar">
+            <div class="field">
+                <label for="q">Recherche</label>
+                <input type="text" id="q" name="q" value="{{ term }}" placeholder="Nom ou code">
+            </div>
+            <div class="field field--checkbox" style="min-width:auto;">
+                <label><input type="checkbox" name="actifs" value="1" {{ active_only ? 'checked' }}> Actifs seulement</label>
+            </div>
+            <button class="btn" type="submit">Filtrer</button>
+            {% if term or active_only %}
+                <a class="btn btn--ghost" href="{{ path('app_supplier_index') }}">Réinitialiser</a>
+            {% endif %}
+        </form>
+
+        {% if result.items is empty %}
+            <div class="empty">
+                Aucun fournisseur trouvé.
+                {% if can('supplier.manage') %}
+                    <br><a href="{{ path('app_supplier_new') }}">Créer un fournisseur</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Raison sociale</th>
+                        <th>Catégorie</th>
+                        <th>Contact</th>
+                        <th class="num">Délai</th>
+                        <th>Statut</th>
+                        <th class="actions"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for supplier in result.items %}
+                        <tr>
+                            <td><span class="mono">{{ supplier.code }}</span></td>
+                            <td>
+                                <span class="cell-main">{{ supplier.name }}</span>
+                                {% if supplier.taxIdentifier %}<div class="cell-sub">{{ supplier.taxIdentifier }}</div>{% endif %}
+                            </td>
+                            <td>{{ supplier.serviceCategory ?: '—' }}</td>
+                            <td>
+                                {% if supplier.email %}<div>{{ supplier.email }}</div>{% endif %}
+                                {% if supplier.phone %}<div class="cell-sub">{{ supplier.phone }}</div>{% endif %}
+                                {% if not supplier.email and not supplier.phone %}—{% endif %}
+                            </td>
+                            <td class="num">{{ supplier.paymentTermsDays }} j</td>
+                            <td>
+                                {% if supplier.isActive %}
+                                    <span class="badge badge--success">Actif</span>
+                                {% else %}
+                                    <span class="badge badge--muted">Inactif</span>
+                                {% endif %}
+                            </td>
+                            <td class="actions">
+                                {% if can('supplier.manage') %}
+                                    <a class="btn btn--ghost btn--sm" href="{{ path('app_supplier_edit', {id: supplier.idString}) }}">Modifier</a>
+                                    <form class="inline-form" method="post" action="{{ path('app_supplier_toggle', {id: supplier.idString}) }}"
+                                          data-confirm="{{ supplier.isActive ? 'Désactiver ce fournisseur ?' : 'Réactiver ce fournisseur ?' }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('supplier_toggle_' ~ supplier.idString) }}">
+                                        <button class="btn btn--ghost btn--sm" type="submit">{{ supplier.isActive ? 'Désactiver' : 'Réactiver' }}</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

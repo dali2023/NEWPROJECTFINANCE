@@ -1,0 +1,36 @@
+{% if result.pages > 1 %}
+    {% set query = app.request.query.all %}
+    <nav class="pagination" aria-label="Pagination">
+        {% set previous = query|merge({'page': result.page - 1}) %}
+        {% set next = query|merge({'page': result.page + 1}) %}
+        {% if result.page > 1 %}
+            <a href="{{ path(app.request.attributes.get('_route'), previous) }}" aria-label="Page précédente">‹</a>
+        {% else %}
+            <span class="is-disabled">‹</span>
+        {% endif %}
+
+        {% set start = max(1, result.page - 2) %}
+        {% set end = min(result.pages, result.page + 2) %}
+        {% if start > 1 %}
+            <a href="{{ path(app.request.attributes.get('_route'), query|merge({'page': 1})) }}">1</a>
+            {% if start > 2 %}<span class="is-disabled">…</span>{% endif %}
+        {% endif %}
+        {% for page in start..end %}
+            {% if page == result.page %}
+                <span class="is-current">{{ page }}</span>
+            {% else %}
+                <a href="{{ path(app.request.attributes.get('_route'), query|merge({'page': page})) }}">{{ page }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if end < result.pages %}
+            {% if end < result.pages - 1 %}<span class="is-disabled">…</span>{% endif %}
+            <a href="{{ path(app.request.attributes.get('_route'), query|merge({'page': result.pages})) }}">{{ result.pages }}</a>
+        {% endif %}
+
+        {% if result.page < result.pages %}
+            <a href="{{ path(app.request.attributes.get('_route'), next) }}" aria-label="Page suivante">›</a>
+        {% else %}
+            <span class="is-disabled">›</span>
+        {% endif %}
+    </nav>
+{% endif %}

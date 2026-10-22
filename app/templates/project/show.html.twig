@@ -1,0 +1,279 @@
+{% extends 'base.html.twig' %}
+
+{% set tab = app.request.query.get('onglet', 'synthese') %}
+
+{% block title %}{{ project.code }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_project_index') }}">Projets</a> / {{ project.code }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ project.name }}</h1>
+            <div class="page-head__subtitle">
+                <span class="mono">{{ project.code }}</span>
+                <span class="badge {{ project.status.badgeClass }}">{{ project.status.label }}</span>
+                {% if project.client %}
+                    · {{ project.client.name }}
+                {% endif %}
+                {% if project.isContractual %}
+                    <span class="badge badge--primary">Contrat signé</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            {% if is_granted('PROJECT_EDIT', project) %}
+                <a class="btn btn--primary" href="{{ path('app_project_edit', {id: project.idString}) }}">Modifier</a>
+            {% endif %}
+            {% if is_granted('PROJECT_CLOSE', project) %}
+                <form class="inline-form" method="post" action="{{ path('app_project_close', {id: project.idString}) }}"
+                      data-confirm="Clôturer définitivement ce projet ? Il ne sera plus modifiable.">
+                    <input type="hidden" name="_token" value="{{ csrf_token('project_close_' ~ project.idString) }}">
+                    <button class="btn btn--danger" type="submit">Clôturer le projet</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <nav class="tabs" aria-label="Sections du projet">
+        <a class="tab {{ tab == 'synthese' ? 'is-active' }}" href="{{ path('app_project_show', {id: project.idString, onglet: 'synthese'}) }}">Synthèse</a>
+        <a class="tab {{ tab == 'contrat' ? 'is-active' }}" href="{{ path('app_project_show', {id: project.idString, onglet: 'contrat'}) }}">Contrat et échéancier</a>
+        <a class="tab {{ tab == 'budget' ? 'is-active' }}" href="{{ path('app_project_show', {id: project.idString, onglet: 'budget'}) }}">Budget et rentabilité</a>
+        <a class="tab {{ tab == 'facturation' ? 'is-active' }}" href="{{ path('app_project_show', {id: project.idString, onglet: 'facturation'}) }}">Facturation</a>
+        <a class="tab {{ tab == 'charges' ? 'is-active' }}" href="{{ path('app_project_show', {id: project.idString, onglet: 'charges'}) }}">Charges</a>
+        <a class="tab {{ tab == 'documents' ? 'is-active' }}" href="{{ path('app_project_show', {id: project.idString, onglet: 'documents'}) }}">Documents</a>
+        <a class="tab {{ tab == 'historique' ? 'is-active' }}" href="{{ path('app_project_show', {id: project.idString, onglet: 'historique'}) }}">Historique</a>
+    </nav>
+
+    {% if tab == 'synthese' %}
+        <div class="grid grid--stats" style="margin-bottom:1rem;">
+            <div class="card stat">
+                <div class="stat__label">Montant contractuel HT</div>
+                <div class="stat__value">{{ project.contractAmountHt|money(project.currencyCode) }}</div>
+                <div class="stat__hint">TVA {{ project.vatRate|money_rate }} — TTC {{ project.contractAmountTtc|money(project.currencyCode) }}</div>
+            </div>
+            <div class="card stat">
+                <div class="stat__label">Budget des charges</div>
+                <div class="stat__value">{{ project.budgetAmount|money(project.currencyCode) }}</div>
+                <div class="stat__hint">Enveloppe prévisionnelle validée</div>
+            </div>
+            <div class="card stat">
+                <div class="stat__label">Échéancier contractuel</div>
+                <div class="stat__value">{{ milestones_total|money(project.currencyCode) }}</div>
+                <div class="stat__hint">
+                    {% if contract_gap == '0.000' %}
+                        Échéancier aligné sur le contrat
+                    {% else %}
+                        Écart avec le contrat : <span class="{{ contract_gap starts with '-' ? 'negative' : 'positive' }}">{{ contract_gap|money(project.currencyCode) }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card stat stat--muted">
+                <div class="stat__label">Marge prévisionnelle</div>
+                <div class="stat__value">Phase 3</div>
+                <div class="stat__hint">Calculée avec les charges réelles</div>
+            </div>
+        </div>
+
+        <div class="grid grid--2">
+            <section class="card">
+                <div class="card__header"><div class="card__title">Informations générales</div></div>
+                <div class="card__body">
+                    <dl class="definition">
+                        <dt>Référence</dt><dd class="mono">{{ project.code }}</dd>
+                        <dt>Client</dt>
+                        <dd>
+                            {% if project.client %}
+                                <a href="{{ path('app_client_show', {id: project.client.idString}) }}">{{ project.client.name }}</a>
+                            {% else %}—{% endif %}
+                        </dd>
+                        <dt>Type de projet</dt><dd>{{ project.projectType ? project.projectType.label : '—' }}</dd>
+                        <dt>Responsable</dt><dd>{{ project.manager ? project.manager.fullName : 'Non affecté' }}</dd>
+                        <dt>Équipe</dt>
+                        <dd>
+                            {% for member in project.members %}
+                                {{ member.fullName }}{% if not loop.last %}, {% endif %}
+                            {% else %}—{% endfor %}
+                        </dd>
+                        <dt>Statut</dt><dd><span class="badge {{ project.status.badgeClass }}">{{ project.status.label }}</span></dd>
+                        <dt>Créé par</dt><dd>{{ project.createdBy ? project.createdBy.fullName : '—' }}</dd>
+                    </dl>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card__header"><div class="card__title">Calendrier</div></div>
+                <div class="card__body">
+                    <dl class="definition">
+                        <dt>Signature</dt><dd>{{ project.signedOn ? project.signedOn|date('d/m/Y') : '—' }}</dd>
+                        <dt>Début</dt><dd>{{ project.startDate ? project.startDate|date('d/m/Y') : '—' }}</dd>
+                        <dt>Fin contractuelle</dt><dd>{{ project.endDate ? project.endDate|date('d/m/Y') : '—' }}</dd>
+                        <dt>Livraison prévisionnelle</dt><dd>{{ project.plannedDeliveryDate ? project.plannedDeliveryDate|date('d/m/Y') : '—' }}</dd>
+                        {% if project.closedAt %}
+                            <dt>Clôturé le</dt><dd>{{ project.closedAt|date('d/m/Y H:i') }}{% if project.closedBy %} par {{ project.closedBy.fullName }}{% endif %}</dd>
+                        {% endif %}
+                        {% if project.probability is not null %}
+                            <dt>Probabilité</dt><dd>{{ project.probability }} %</dd>
+                        {% endif %}
+                    </dl>
+                    {% if project.notes %}
+                        <div class="divider"></div>
+                        <div class="section-title">Commentaires</div>
+                        <p style="white-space:pre-line;">{{ project.notes }}</p>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+    {% elseif tab == 'contrat' %}
+        <section class="card">
+            <div class="card__header"><div class="card__title">Données contractuelles</div></div>
+            <div class="card__body">
+                <div class="grid grid--2">
+                    <dl class="definition">
+                        <dt>Référence contrat / marché</dt><dd>{{ project.contractReference ?: '—' }}</dd>
+                        <dt>Référence appel d’offres</dt><dd>{{ project.tenderReference ?: '—' }}</dd>
+                        <dt>Conditions de paiement</dt><dd>{{ project.paymentTerms ?: '—' }}</dd>
+                        <dt>Devise</dt><dd>{{ project.currencyCode }}</dd>
+                    </dl>
+                    <dl class="definition">
+                        <dt>Montant HT</dt><dd class="num">{{ project.contractAmountHt|money(project.currencyCode) }}</dd>
+                        <dt>Taux de TVA</dt><dd>{{ project.vatRate|money_rate }}</dd>
+                        <dt>Montant TVA</dt><dd class="num">{{ project.vatAmount|money(project.currencyCode) }}</dd>
+                        <dt>Montant TTC</dt><dd class="num"><strong>{{ project.contractAmountTtc|money(project.currencyCode) }}</strong></dd>
+                    </dl>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top:1rem;">
+            <div class="card__header">
+                <div class="card__title">Échéancier</div>
+                <div class="muted" style="font-size:.8rem;">Total : {{ milestones_total|money(project.currencyCode) }}</div>
+            </div>
+            {% if project.milestones is empty %}
+                <div class="empty">Aucun jalon défini.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Libellé</th>
+                            <th>Date prévue</th>
+                            <th>Statut</th>
+                            <th class="num">Montant HT</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for milestone in project.milestones %}
+                            <tr>
+                                <td class="muted">{{ loop.index }}</td>
+                                <td>{{ milestone.label }}</td>
+                                <td>{{ milestone.plannedDate ? milestone.plannedDate|date('d/m/Y') : '—' }}</td>
+                                <td><span class="badge {{ milestone.status.badgeClass }}">{{ milestone.status.label }}</span></td>
+                                <td class="num">{{ milestone.amountHt|money(project.currencyCode) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <th colspan="4" style="text-align:right;">Total de l’échéancier</th>
+                            <th class="num">{{ milestones_total|money(project.currencyCode) }}</th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% endif %}
+            {% if contract_gap != '0.000' %}
+                <div class="card__footer">
+                    <span class="badge badge--warning">Écart</span>
+                    L’échéancier présente un écart de {{ contract_gap|money(project.currencyCode) }} par rapport au montant contractuel HT.
+                </div>
+            {% endif %}
+        </section>
+    {% elseif tab == 'budget' %}
+        <div class="grid grid--2">
+            <section class="card">
+                <div class="card__header"><div class="card__title">Budget et consommation</div></div>
+                <div class="card__body">
+                    <dl class="definition">
+                        <dt>Budget prévisionnel</dt><dd class="num">{{ project.budgetAmount|money(project.currencyCode) }}</dd>
+                        <dt>Charges engagées</dt><dd class="num">—</dd>
+                        <dt>Charges payées</dt><dd class="num">—</dd>
+                        <dt>Charges indirectes réparties</dt><dd class="num">—</dd>
+                        <dt>Marge réalisée</dt><dd class="num">—</dd>
+                    </dl>
+                </div>
+            </section>
+            <section class="card">
+                <div class="card__header"><div class="card__title">Rentabilité</div></div>
+                <div class="card__body">
+                    <div class="placeholder-module">
+                        Les indicateurs de rentabilité (marge prévisionnelle et réalisée, taux de marge,
+                        coût complet avec charges indirectes réparties) seront calculés à partir du
+                        module Charges (phase 3) et du module Répartition (phase 4).
+                    </div>
+                </div>
+            </section>
+        </div>
+    {% elseif tab == 'facturation' %}
+        <section class="card">
+            <div class="card__header"><div class="card__title">Factures et encaissements</div></div>
+            <div class="card__body">
+                <div class="placeholder-module">
+                    Module de facturation (M04) — phase 3. Il gérera les factures, acomptes, avoirs,
+                    encaissements et leur affectation aux factures, y compris les encaissements partiels.
+                </div>
+            </div>
+        </section>
+    {% elseif tab == 'charges' %}
+        <section class="card">
+            <div class="card__header"><div class="card__title">Charges du projet</div></div>
+            <div class="card__body">
+                <div class="placeholder-module">
+                    Module de charges (M05) — phase 3. Dépenses directes, charges récurrentes,
+                    justificatifs et paiements.
+                </div>
+            </div>
+        </section>
+    {% elseif tab == 'documents' %}
+        <section class="card">
+            <div class="card__header"><div class="card__title">Documents</div></div>
+            <div class="card__body">
+                <div class="placeholder-module">
+                    Le stockage des justificatifs est prévu hors du répertoire public, avec contrôle
+                    d’accès. L’interface de dépôt sera livrée en phase 3.
+                </div>
+            </div>
+        </section>
+    {% elseif tab == 'historique' %}
+        <section class="card">
+            <div class="card__header"><div class="card__title">Historique des opérations</div></div>
+            {% if history is empty %}
+                <div class="empty">Aucune opération enregistrée pour ce projet.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table table--compact">
+                        <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Utilisateur</th>
+                            <th>Action</th>
+                            <th>Détail</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for entry in history %}
+                            <tr>
+                                <td class="mono">{{ entry.occurredAt|date('d/m/Y H:i') }}</td>
+                                <td>{{ entry.username ?: '—' }}</td>
+                                <td><span class="tag">{{ entry.action }}</span></td>
+                                <td class="muted">{{ entry.message ?: '—' }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+    {% endif %}
+{% endblock %}

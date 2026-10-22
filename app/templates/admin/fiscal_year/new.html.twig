@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvel exercice{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_admin_fiscal_year_index') }}">Exercices</a> / Nouveau{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Nouvel exercice</h1>
+            <div class="page-head__subtitle">Les périodes des exercices ne peuvent pas se chevaucher.</div>
+        </div>
+    </div>
+
+    <section class="card" style="max-width:640px;">
+        <div class="card__body">
+            {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+                {{ form_row(form.label) }}
+                {{ form_row(form.startDate) }}
+                {{ form_row(form.endDate) }}
+                {{ form_row(form.status) }}
+
+                <div class="form-actions">
+                    <button class="btn btn--primary" type="submit">Créer l’exercice</button>
+                    <a class="btn btn--ghost" href="{{ path('app_admin_fiscal_year_index') }}">Annuler</a>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </section>
+{% endblock %}

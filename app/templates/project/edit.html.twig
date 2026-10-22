@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier {{ project.code }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_project_index') }}">Projets</a> / <a href="{{ path('app_project_show', {id: project.idString}) }}">{{ project.code }}</a> / Modifier{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Modifier le projet</h1>
+            <div class="page-head__subtitle">
+                <span class="mono">{{ project.code }}</span> — {{ project.name }}
+                <span class="badge {{ project.status.badgeClass }}">{{ project.status.label }}</span>
+            </div>
+        </div>
+        <div class="page-head__actions">
+            <a class="btn" href="{{ path('app_project_show', {id: project.idString}) }}">Voir la fiche</a>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% include 'project/_form.html.twig' %}
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer les modifications</button>
+            <a class="btn btn--ghost" href="{{ path('app_project_show', {id: project.idString}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

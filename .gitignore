@@ -1,0 +1,33 @@
+# ---------------------------------------------------------------------------
+# ONE ERP Finance & Project Control
+# ---------------------------------------------------------------------------
+# Secrets et configuration locale
+.env
+.env.local
+.env.*.local
+# Configuration Symfony par défaut (valeurs de développement, sans secret de
+# production) : nécessaire au démarrage après un clone.
+!app/.env
+
+# Symfony
+/app/var/
+/app/vendor/
+/app/public/bundles/
+/app/public/build/
+/app/config/secrets/prod/prod.decrypt.private.php
+/app/phpunit.xml
+
+# Justificatifs et exports générés (stockage local, hors web)
+/storage/
+/app/storage/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*

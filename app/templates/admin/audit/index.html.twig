@@ -1,0 +1,99 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Journal d’audit{% endblock %}
+{% block breadcrumb %}Administration / Journal d’audit{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Journal d’audit</h1>
+            <div class="page-head__subtitle">
+                {{ result.total }} entrée{{ result.total > 1 ? 's' : '' }} — conservation en lecture seule
+            </div>
+        </div>
+    </div>
+
+    <section class="card">
+        <form method="get" action="{{ path('app_admin_audit_index') }}" class="toolbar">
+            <div class="field">
+                <label for="entite">Entité</label>
+                <select id="entite" name="entite" data-auto-submit>
+                    <option value="">Toutes</option>
+                    {% for entity in entities %}
+                        <option value="{{ entity }}" {{ filters.entite == entity ? 'selected' }}>{{ entity }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="action">Action</label>
+                <select id="action" name="action" data-auto-submit>
+                    <option value="">Toutes</option>
+                    {% for action in ['create', 'update', 'status_change', 'close', 'reopen', 'deny', 'permission_change', 'validate', 'cancel'] %}
+                        <option value="{{ action }}" {{ filters.action == action ? 'selected' }}>{{ action }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="utilisateur">Utilisateur</label>
+                <input type="text" id="utilisateur" name="utilisateur" value="{{ filters.utilisateur }}" placeholder="Identifiant">
+            </div>
+            <div class="field">
+                <label for="du">Du</label>
+                <input type="date" id="du" name="du" value="{{ filters.du }}">
+            </div>
+            <div class="field">
+                <label for="au">Au</label>
+                <input type="date" id="au" name="au" value="{{ filters.au }}">
+            </div>
+            <button class="btn" type="submit">Filtrer</button>
+            {% if filters.entite or filters.action or filters.utilisateur or filters.du or filters.au %}
+                <a class="btn btn--ghost" href="{{ path('app_admin_audit_index') }}">Réinitialiser</a>
+            {% endif %}
+        </form>
+
+        {% if result.items is empty %}
+            <div class="empty">Aucune entrée pour ces critères.</div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table table--compact">
+                    <thead>
+                    <tr>
+                        <th>Horodatage</th>
+                        <th>Utilisateur</th>
+                        <th>Action</th>
+                        <th>Entité</th>
+                        <th>Résultat</th>
+                        <th>Détail</th>
+                        <th>Adresse IP</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for entry in result.items %}
+                        <tr>
+                            <td class="mono">{{ entry.occurredAt|date('d/m/Y H:i:s') }}</td>
+                            <td>{{ entry.username ?: '—' }}</td>
+                            <td><span class="tag">{{ entry.action }}</span></td>
+                            <td>
+                                {{ entry.entity }}
+                                {% if entry.module %}<div class="cell-sub">{{ entry.module }}</div>{% endif %}
+                            </td>
+                            <td>
+                                {% if entry.result == 'success' %}
+                                    <span class="badge badge--success">Succès</span>
+                                {% elseif entry.result == 'denied' %}
+                                    <span class="badge badge--danger">Refusé</span>
+                                {% else %}
+                                    <span class="badge badge--warning">Échec</span>
+                                {% endif %}
+                            </td>
+                            <td class="muted">{{ entry.message ?: '—' }}</td>
+                            <td class="mono muted">{{ entry.ipAddress ?: '—' }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

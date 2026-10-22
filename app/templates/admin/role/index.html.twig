@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rôles et permissions{% endblock %}
+{% block breadcrumb %}Administration / Rôles et permissions{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Rôles et permissions</h1>
+            <div class="page-head__subtitle">
+                {{ roles|length }} rôle{{ roles|length > 1 ? 's' : '' }} · {{ permissions_count }} permission{{ permissions_count > 1 ? 's' : '' }} disponible{{ permissions_count > 1 ? 's' : '' }}
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert--warning" style="margin-bottom:1rem;">
+        Toute modification de permissions est journalisée et prend effet immédiatement.
+        L’administrateur technique ne peut pas s’attribuer les permissions de validation financière
+        sans une décision explicite de la direction (séparation des tâches).
+    </div>
+
+    <section class="card">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Rôle</th>
+                    <th>Code technique</th>
+                    <th class="num">Permissions</th>
+                    <th class="num">Utilisateurs</th>
+                    <th class="actions"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for role in roles %}
+                    <tr>
+                        <td>
+                            <div class="cell-main">{{ role.label }}</div>
+                            {% if role.description %}<div class="cell-sub">{{ role.description }}</div>{% endif %}
+                        </td>
+                        <td><span class="mono">{{ role.code }}</span></td>
+                        <td class="num">{{ role.permissions|length }}</td>
+                        <td class="num">{{ user_counts[role.idString]|default(0) }}</td>
+                        <td class="actions">
+                            <a class="btn btn--ghost btn--sm" href="{{ path('app_admin_role_edit', {id: role.idString}) }}">Permissions</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

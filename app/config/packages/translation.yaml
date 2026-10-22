@@ -1,0 +1,7 @@
+# Traduction : l'interface est en français (§1.4). Le français est à la fois
+# la locale par défaut et la locale de repli.
+framework:
+    default_locale: 'fr'
+    translator:
+        default_path: '%kernel.project_dir%/translations'
+        fallbacks: ['fr']

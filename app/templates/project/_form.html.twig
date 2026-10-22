@@ -1,0 +1,107 @@
+{% set milestone_prototype %}
+    <div data-collection-item class="milestone-item">
+        <div class="card" style="background:var(--surface-alt);">
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.milestones.vars.prototype.label) }}
+                    {{ form_row(form.milestones.vars.prototype.plannedDate) }}
+                    {{ form_row(form.milestones.vars.prototype.amountHt) }}
+                    {{ form_row(form.milestones.vars.prototype.status) }}
+                </div>
+                <button type="button" class="btn btn--ghost btn--sm" data-collection-remove>Retirer ce jalon</button>
+            </div>
+        </div>
+    </div>
+{% endset %}
+
+{% if form.vars.errors|length > 0 %}
+    <div class="alert alert--error" role="alert">
+        {{ form_errors(form) }}
+    </div>
+{% endif %}
+
+<section class="card">
+    <div class="card__header"><div class="card__title">Identification du projet</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.name) }}
+            {{ form_row(form.client) }}
+            {{ form_row(form.projectType) }}
+            {{ form_row(form.manager) }}
+            {{ form_row(form.status) }}
+        </div>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1rem;">
+    <div class="card__header"><div class="card__title">Contrat et calendrier</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.contractReference) }}
+            {{ form_row(form.tenderReference) }}
+            {{ form_row(form.signedOn) }}
+            {{ form_row(form.startDate) }}
+            {{ form_row(form.endDate) }}
+            {{ form_row(form.plannedDeliveryDate) }}
+            {{ form_row(form.currencyCode) }}
+            {{ form_row(form.paymentTerms) }}
+        </div>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1rem;">
+    <div class="card__header"><div class="card__title">Montants contractuels</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.contractAmountHt) }}
+            {{ form_row(form.vatRate) }}
+            {{ form_row(form.budgetAmount) }}
+            {{ form_row(form.probability) }}
+        </div>
+        <div class="help">
+            La TVA et le montant TTC sont recalculés automatiquement à l’enregistrement,
+            au millime près (aucun arrondi flottant).
+        </div>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1rem;">
+    <div class="card__header">
+        <div class="card__title">Échéancier contractuel</div>
+        <div class="muted" style="font-size:.8rem;">Facultatif — la somme des jalons peut différer du montant contractuel.</div>
+    </div>
+    <div class="card__body">
+        <div data-collection
+             data-index="{{ form.milestones|length }}"
+             data-prototype="{{ milestone_prototype|e('html_attr') }}">
+            <div data-collection-items style="display:grid; gap:.75rem;">
+                {% for milestone in form.milestones %}
+                    <div data-collection-item class="milestone-item">
+                        <div class="card" style="background:var(--surface-alt);">
+                            <div class="card__body">
+                                <div class="form-grid">
+                                    {{ form_row(milestone.label) }}
+                                    {{ form_row(milestone.plannedDate) }}
+                                    {{ form_row(milestone.amountHt) }}
+                                    {{ form_row(milestone.status) }}
+                                </div>
+                                <button type="button" class="btn btn--ghost btn--sm" data-collection-remove>Retirer ce jalon</button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div data-collection-empty class="empty" style="padding:1rem;">
+                Aucun jalon défini pour ce projet.
+            </div>
+            <button type="button" class="btn btn--sm" data-collection-add>Ajouter un jalon</button>
+        </div>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1rem;">
+    <div class="card__header"><div class="card__title">Commentaires</div></div>
+    <div class="card__body">
+        {{ form_row(form.notes) }}
+    </div>
+</section>

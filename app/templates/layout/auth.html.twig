@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}ONE ERP{% endblock %} · {{ app_name }}</title>
+    <link rel="stylesheet" href="{{ asset('assets/app.css') }}">
+</head>
+<body>
+<div class="auth">
+    <aside class="auth__aside">
+        <div class="auth__brand">
+            <div class="sidebar__logo">ONE</div>
+            <div>
+                <div class="sidebar__title">Finance &amp; Project Control</div>
+                <div class="sidebar__subtitle">ONE ERP SARL</div>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="auth__title">Le pilotage financier de vos projets, centralisé.</h2>
+            <p class="auth__lead">
+                Contrats, facturation, charges, trésorerie et comptes des associés :
+                une vision fiable de la rentabilité, sans se substituer à la comptabilité officielle.
+            </p>
+            <ul class="auth__points">
+                <li>Rentabilité prévisionnelle et réalisée par projet</li>
+                <li>Suivi des encaissements et des restes à recouvrer</li>
+                <li>Traçabilité des opérations et séparation des responsabilités</li>
+            </ul>
+        </div>
+
+        <div class="muted" style="color:#8fb0ae; font-size:.78rem;">
+            Application interne · Montants en dinars tunisiens (TND)
+        </div>
+    </aside>
+
+    <main class="auth__panel">
+        <div class="auth__form">
+            {% block auth_form %}{% endblock %}
+        </div>
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Exercices financiers{% endblock %}
+{% block breadcrumb %}Administration / Exercices{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Exercices financiers</h1>
+            <div class="page-head__subtitle">
+                {% if current %}
+                    Exercice courant : <strong>{{ current.label }}</strong>
+                {% else %}
+                    Aucun exercice ne couvre la date du jour.
+                {% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('admin.referentials') %}
+                <a class="btn btn--primary" href="{{ path('app_admin_fiscal_year_new') }}">Nouvel exercice</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="alert alert--info" style="margin-bottom:1rem;">
+        Un exercice clôturé est en lecture seule : aucune écriture ordinaire n’est acceptée.
+        Sa réouverture exige une permission dédiée et un motif, tous deux journalisés.
+    </div>
+
+    <section class="card">
+        {% if fiscal_years is empty %}
+            <div class="empty">
+                Aucun exercice enregistré.
+                {% if can('admin.referentials') %}
+                    <br><a href="{{ path('app_admin_fiscal_year_new') }}">Créer le premier exercice</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Libellé</th>
+                        <th>Période</th>
+                        <th>Statut</th>
+                        <th>Clôture</th>
+                        <th class="actions">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for fiscal_year in fiscal_years %}
+                        <tr>
+                            <td>
+                                <span class="cell-main">{{ fiscal_year.label }}</span>
+                                {% if current and current.idString == fiscal_year.idString %}
+                                    <span class="badge badge--info">Courant</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ fiscal_year.startDate ? fiscal_year.startDate|date('d/m/Y') : '—' }}
+                                → {{ fiscal_year.endDate ? fiscal_year.endDate|date('d/m/Y') : '—' }}
+                            </td>
+                            <td><span class="badge {{ fiscal_year.status.badgeClass }}">{{ fiscal_year.status.label }}</span></td>
+                            <td>
+                                {% if fiscal_year.closedAt %}
+                                    {{ fiscal_year.closedAt|date('d/m/Y') }}
+                                    {% if fiscal_year.closedBy %}<div class="cell-sub">{{ fiscal_year.closedBy.fullName }}</div>{% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="actions">
+                                {% if can('admin.referentials') %}
+                                    <a class="btn btn--ghost btn--sm" href="{{ path('app_admin_fiscal_year_edit', {id: fiscal_year.idString}) }}">Modifier</a>
+                                {% endif %}
+                                {% if can('fiscal_year.close') and fiscal_year.status.value != 'closed' %}
+                                    <form class="inline-form" method="post" action="{{ path('app_admin_fiscal_year_close', {id: fiscal_year.idString}) }}"
+                                          data-confirm="Clôturer l’exercice {{ fiscal_year.label }} ? Les écritures seront bloquées.">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('fiscal_year_close_' ~ fiscal_year.idString) }}">
+                                        <button class="btn btn--danger btn--sm" type="submit">Clôturer</button>
+                                    </form>
+                                {% endif %}
+                                {% if can('fiscal_year.reopen') and fiscal_year.status.value == 'closed' %}
+                                    <form class="inline-form" method="post" action="{{ path('app_admin_fiscal_year_reopen', {id: fiscal_year.idString}) }}"
+                                          data-confirm="Réouvrir l’exercice {{ fiscal_year.label }} ? L’opération sera journalisée."
+                                          style="display:inline-flex; gap:.3rem; align-items:center;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('fiscal_year_reopen_' ~ fiscal_year.idString) }}">
+                                        <input type="text" name="motif" required minlength="10" placeholder="Motif (10 caractères min.)"
+                                               style="padding:.3rem .5rem; border:1px solid var(--line-strong); border-radius:6px; font-size:.78rem; width:210px;">
+                                        <button class="btn btn--sm" type="submit">Réouvrir</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

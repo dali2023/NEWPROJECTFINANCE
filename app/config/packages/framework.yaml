@@ -1,0 +1,37 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+    default_locale: '%app.locale%'
+    translator:
+        default_path: '%kernel.project_dir%/translations'
+        fallbacks: ['fr']
+    # Montants et dates : formats français, fuseau de l'entreprise.
+    session:
+        name: ONEEERPSESSID
+        cookie_secure: auto
+        cookie_samesite: lax
+        cookie_httponly: true
+        gc_maxlifetime: 28800
+        handler_id: null
+    # Protection CSRF active : tous les formulaires et actions POST sont protégés.
+    csrf_protection:
+        enabled: true
+    #esi: true
+    #fragments: true
+    php_errors:
+        log: true
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file
+        # Les tests fonctionnels (BrowserKit) n'envoient pas d'en-tête Origin :
+        # on revient au jeton CSRF stocké en session pour pouvoir tester les formulaires.
+        csrf_protection:
+            stateless_token_ids: []
+
+when@prod:
+    framework:
+        session:
+            cookie_secure: true

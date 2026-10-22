@@ -1,0 +1,32 @@
+# Paramètres applicatifs non secrets, partagés par tous les environnements.
+parameters:
+    app.name: '%env(APP_NAME)%'
+    app.locale: '%env(APP_LOCALE)%'
+    app.currency: '%env(APP_CURRENCY)%'
+    app.timezone: '%env(APP_TIMEZONE)%'
+    app.storage_dir: '%env(APP_STORAGE_DIR)%'
+    app.mailer_from: '%env(MAILER_FROM)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # ---------------------------------------------------------------------
+    # Service d'accès aux justificatifs : le répertoire est paramétrable et
+    # reste hors du répertoire public de l'application (§9.5).
+    # ---------------------------------------------------------------------
+    App\Service\DocumentStorage:
+        arguments:
+            $storageDir: '%app.storage_dir%'
+
+    App\Service\ReferenceGenerator:
+        arguments:
+            $timezone: '%app.timezone%'

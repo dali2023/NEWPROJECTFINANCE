@@ -1,0 +1,78 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Utilisateurs{% endblock %}
+{% block breadcrumb %}Administration / Utilisateurs{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Comptes utilisateurs</h1>
+            <div class="page-head__subtitle">{{ result.total }} compte{{ result.total > 1 ? 's' : '' }}</div>
+        </div>
+        <div class="page-head__actions">
+            <a class="btn btn--primary" href="{{ path('app_admin_user_new') }}">Nouvel utilisateur</a>
+        </div>
+    </div>
+
+    <section class="card">
+        <form method="get" action="{{ path('app_admin_user_index') }}" class="toolbar">
+            <div class="field">
+                <label for="q">Recherche</label>
+                <input type="text" id="q" name="q" value="{{ term }}" placeholder="Nom, identifiant ou courriel">
+            </div>
+            <button class="btn" type="submit">Rechercher</button>
+            {% if term %}
+                <a class="btn btn--ghost" href="{{ path('app_admin_user_index') }}">Réinitialiser</a>
+            {% endif %}
+        </form>
+
+        {% if result.items is empty %}
+            <div class="empty">Aucun compte utilisateur.</div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Identifiant</th>
+                        <th>Rôles</th>
+                        <th>Dernière connexion</th>
+                        <th>Statut</th>
+                        <th class="actions"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for user in result.items %}
+                        <tr>
+                            <td>
+                                <div class="cell-main">{{ user.fullName }}</div>
+                                <div class="cell-sub">{{ user.email }}</div>
+                            </td>
+                            <td class="mono">{{ user.username }}</td>
+                            <td>
+                                {% for role in user.assignedRoles %}
+                                    <span class="tag">{{ role.label }}</span>
+                                {% else %}
+                                    <span class="muted">Aucun rôle</span>
+                                {% endfor %}
+                            </td>
+                            <td>{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'Jamais' }}</td>
+                            <td>
+                                {% if user.isActive %}
+                                    <span class="badge badge--success">Actif</span>
+                                {% else %}
+                                    <span class="badge badge--muted">Désactivé</span>
+                                {% endif %}
+                            </td>
+                            <td class="actions">
+                                <a class="btn btn--ghost btn--sm" href="{{ path('app_admin_user_edit', {id: user.idString}) }}">Modifier</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

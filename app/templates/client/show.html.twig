@@ -1,0 +1,78 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ client.name }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_client_index') }}">Clients</a> / {{ client.code }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ client.name }}</h1>
+            <div class="page-head__subtitle">
+                <span class="mono">{{ client.code }}</span>
+                <span class="badge {{ client.clientType.badgeClass }}">{{ client.clientType.label }}</span>
+                {% if client.isActive %}
+                    <span class="badge badge--success">Actif</span>
+                {% else %}
+                    <span class="badge badge--muted">Inactif</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('client.manage') %}
+                <a class="btn btn--primary" href="{{ path('app_client_edit', {id: client.idString}) }}">Modifier</a>
+                <form class="inline-form" method="post" action="{{ path('app_client_toggle', {id: client.idString}) }}"
+                      data-confirm="{{ client.isActive ? 'Désactiver ce client ?' : 'Réactiver ce client ?' }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('client_toggle_' ~ client.idString) }}">
+                    <button class="btn {{ client.isActive ? 'btn--danger' : '' }}" type="submit">
+                        {{ client.isActive ? 'Désactiver' : 'Réactiver' }}
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid--2">
+        <section class="card">
+            <div class="card__header"><div class="card__title">Coordonnées</div></div>
+            <div class="card__body">
+                <dl class="definition">
+                    <dt>Contact principal</dt><dd>{{ client.contactName ?: '—' }}</dd>
+                    <dt>Adresse électronique</dt><dd>{{ client.email ?: '—' }}</dd>
+                    <dt>Téléphone</dt><dd>{{ client.phone ?: '—' }}</dd>
+                    <dt>Adresse</dt>
+                    <dd>
+                        {% if client.address %}{{ client.address }}<br>{% endif %}
+                        {% if client.postalCode or client.city %}{{ client.postalCode }} {{ client.city }}<br>{% endif %}
+                        {{ client.country ?: '' }}
+                        {% if not client.address and not client.city %}—{% endif %}
+                    </dd>
+                    <dt>Identifiant fiscal</dt><dd>{{ client.taxIdentifier ?: '—' }}</dd>
+                </dl>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Conditions commerciales</div></div>
+            <div class="card__body">
+                <dl class="definition">
+                    <dt>Type de client</dt><dd>{{ client.clientType.label }}</dd>
+                    <dt>Délai de paiement</dt><dd>{{ client.paymentTermsDays }} jours</dd>
+                    <dt>Créé le</dt><dd>{{ client.createdAt ? client.createdAt|date('d/m/Y') : '—' }}</dd>
+                    <dt>Dernière modification</dt><dd>{{ client.updatedAt ? client.updatedAt|date('d/m/Y H:i') : '—' }}</dd>
+                </dl>
+                {% if client.notes %}
+                    <div class="divider"></div>
+                    <div class="section-title">Observations</div>
+                    <p style="white-space:pre-line;">{{ client.notes }}</p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+
+    <section class="card" style="margin-top:1rem;">
+        <div class="card__header"><div class="card__title">Projets du client</div></div>
+        <div class="placeholder-module" style="margin:1.1rem;">
+            La liste des projets rattachés à ce client sera disponible depuis le module Projets.
+        </div>
+    </section>
+{% endblock %}

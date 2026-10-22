@@ -1,0 +1,68 @@
+# ---------------------------------------------------------------------------
+# Sécurité — rôles et permissions (§3 du cahier des charges)
+#
+# Les rôles portent la partition fonctionnelle ; les permissions unitaires
+# (App\Entity\Permission, matrice docs/03-matrice-permissions.md) portent les
+# droits fins, contrôlés côté serveur par App\Security\PermissionVoter.
+# ---------------------------------------------------------------------------
+security:
+    password_hashers:
+        App\Entity\User:
+            algorithm: auto
+            # Contrainte de sécurité : coût élevé en production (défaut Symfony).
+
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: username
+
+    role_hierarchy:
+        ROLE_ADMIN: [ROLE_USER]
+        ROLE_DIRECTION: [ROLE_USER]
+        ROLE_FINANCE: [ROLE_USER]
+        ROLE_COMMERCIAL: [ROLE_USER]
+        ROLE_PROJECT_MANAGER: [ROLE_USER]
+
+    firewalls:
+        dev:
+            # Outils de développement et assets toujours accessibles.
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+        main:
+            lazy: true
+            provider: app_user_provider
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                username_parameter: _username
+                password_parameter: _password
+                enable_csrf: true
+                default_target_path: app_dashboard
+            logout:
+                path: app_logout
+                target: app_login
+                invalidate_session: true
+            remember_me:
+                secret: '%kernel.secret%'
+                lifetime: 1209600
+                path: /
+                always_remember_me: false
+
+    access_control:
+        # Pages publiques
+        - { path: ^/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/mot-de-passe-oublie, roles: PUBLIC_ACCESS }
+        - { path: ^/reinitialiser-mot-de-passe, roles: PUBLIC_ACCESS }
+        - { path: ^/health$, roles: PUBLIC_ACCESS }
+        # Tout le reste exige une session authentifiée
+        - { path: ^/, roles: ROLE_USER }
+
+when@test:
+    security:
+        password_hashers:
+            App\Entity\User:
+                algorithm: auto
+                cost: 4
+                time_cost: 3
+                memory_cost: 10

@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Permissions — {{ role.label }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_admin_role_index') }}">Rôles</a> / {{ role.label }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ role.label }}</h1>
+            <div class="page-head__subtitle">
+                <span class="mono">{{ role.code }}</span>
+                {% if role.isSystem %}<span class="badge badge--neutral">Rôle système</span>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        <section class="card">
+            <div class="card__header">
+                <div class="card__title">Permissions autorisées</div>
+                <div class="muted" style="font-size:.8rem;">{{ role.permissions|length }} permission(s) actuellement accordée(s)</div>
+            </div>
+            <div class="card__body">
+                <div class="grid grid--2">
+                    {{ form_widget(form.permissions) }}
+                </div>
+            </div>
+            <div class="card__footer" style="display:flex; gap:.6rem;">
+                <button class="btn btn--primary" type="submit">Enregistrer les permissions</button>
+                <a class="btn btn--ghost" href="{{ path('app_admin_role_index') }}">Annuler</a>
+            </div>
+        </section>
+    {{ form_end(form) }}
+{% endblock %}
