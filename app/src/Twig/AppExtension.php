@@ -6,6 +6,7 @@ namespace App\Twig;
 
 use App\Service\Money;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Asset\Packages;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
@@ -14,12 +15,16 @@ use Twig\TwigFunction;
  * Fonctions de présentation communes aux gabarits :
  * - formatage monétaire exact (aucun flottant) ;
  * - vérification de permission côté gabarit (confort d'affichage : le contrôle
- *   d'accès réel reste effectué par les contrôleurs et les voters).
+ *   d'accès réel reste effectué par les contrôleurs et les voters) ;
+ * - versionnement des assets statiques pour éviter les caches navigateur.
  */
 final class AppExtension extends AbstractExtension
 {
-    public function __construct(private readonly Security $security)
-    {
+    public function __construct(
+        private readonly Security $security,
+        private readonly Packages $packages,
+        private readonly string $projectDir,
+    ) {
     }
 
     public function getFilters(): array
@@ -35,7 +40,24 @@ final class AppExtension extends AbstractExtension
         return [
             new TwigFunction('can', $this->can(...)),
             new TwigFunction('percent', $this->percent(...)),
+            new TwigFunction('versioned_asset', $this->versionedAsset(...)),
         ];
+    }
+
+    /**
+     * URL d'un asset statique suffixée par sa date de modification.
+     *
+     * Nginx sert les fichiers statiques avec un cache long : sans ce
+     * versionnement, une modification de CSS/JS restait invisible tant que le
+     * navigateur réutilisait sa copie en cache.
+     */
+    public function versionedAsset(string $path): string
+    {
+        $url = $this->packages->getUrl($path);
+        $file = $this->projectDir.'/public/'.ltrim($path, '/');
+        $version = is_file($file) ? (string) filemtime($file) : '1';
+
+        return $url.(\str_contains($url, '?') ? '&' : '?').'v='.$version;
     }
 
     public function formatMoney(?string $amount, ?string $currency = null): string

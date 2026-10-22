@@ -38,3 +38,7 @@ services:
     App\Service\ContractAlertConfig:
         arguments:
             $delays: '%app.contract_alerts%'
+
+    App\Twig\AppExtension:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
