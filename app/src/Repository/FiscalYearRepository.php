@@ -25,7 +25,7 @@ class FiscalYearRepository extends ServiceEntityRepository
     public function findAllOrdered(): array
     {
         return $this->createQueryBuilder('f')
-            ->orderBy('f.startDate', \SortDirection::Descending)
+            ->orderBy('f.startDate', 'DESC')
             ->getQuery()
             ->getResult();
     }
@@ -36,7 +36,7 @@ class FiscalYearRepository extends ServiceEntityRepository
             ->where('f.startDate <= :on')
             ->andWhere('f.endDate >= :on')
             ->setParameter('on', $on)
-            ->orderBy('f.startDate', \SortDirection::Descending)
+            ->orderBy('f.startDate', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();

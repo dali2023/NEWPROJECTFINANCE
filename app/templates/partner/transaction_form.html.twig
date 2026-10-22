@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle opération — {{ partner.name }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_partner_index') }}">Associés</a> / <a href="{{ path('app_partner_show', {id: partner.idString}) }}">{{ partner.name }}</a> / Nouvelle opération{% endblock %}
+
+{% block body %}
+    <div class="page-head"><div><h1>Nouvelle opération d’associé</h1><div class="page-head__subtitle">{{ partner.code }} — {{ partner.name }}</div></div></div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}<div class="alert alert--error">{{ form_errors(form) }}</div>{% endif %}
+        <section class="card">
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.partner) }}
+                    {{ form_row(form.transactionType) }}
+                    {{ form_row(form.transactionDate) }}
+                    {{ form_row(form.amount) }}
+                    {{ form_row(form.currencyCode) }}
+                    {{ form_row(form.label) }}
+                    {{ form_row(form.bankAccount) }}
+                </div>
+                {{ form_row(form.notes) }}
+                <div class="help">Une opération créée est « prévue ». Elle doit être validée puis réglée pour générer un mouvement de trésorerie.</div>
+            </div>
+        </section>
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer l’opération</button>
+            <a class="btn btn--ghost" href="{{ path('app_partner_show', {id: partner.idString}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

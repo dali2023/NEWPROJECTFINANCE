@@ -1,0 +1,60 @@
+{% if form.vars.errors|length > 0 %}<div class="alert alert--error">{{ form_errors(form) }}</div>{% endif %}
+
+<section class="card">
+    <div class="card__header"><div class="card__title">En-tête de facture</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.invoiceType) }}
+            {{ form_row(form.client) }}
+            {{ form_row(form.project) }}
+            {{ form_row(form.contract) }}
+            {{ form_row(form.issueDate) }}
+            {{ form_row(form.dueDate) }}
+            {{ form_row(form.currencyCode) }}
+        </div>
+        {{ form_row(form.notes) }}
+    </div>
+</section>
+
+{% set line_prototype %}
+    <div data-collection-item class="line-item">
+        <div class="card" style="background:var(--surface-alt);">
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.lines.vars.prototype.designation) }}
+                    {{ form_row(form.lines.vars.prototype.quantity) }}
+                    {{ form_row(form.lines.vars.prototype.unitPriceHt) }}
+                    {{ form_row(form.lines.vars.prototype.vatRate) }}
+                </div>
+                <button type="button" class="btn btn--ghost btn--sm" data-collection-remove>Retirer la ligne</button>
+            </div>
+        </div>
+    </div>
+{% endset %}
+
+<section class="card" style="margin-top:1rem;" data-collection data-prototype="{{ line_prototype|e('html_attr') }}" data-index="{{ form.lines|length }}">
+    <div class="card__header">
+        <div class="card__title">Lignes</div>
+        <button type="button" class="btn btn--sm" data-collection-add>Ajouter une ligne</button>
+    </div>
+    <div class="card__body">
+        <div data-collection-items>
+            {% for line in form.lines %}
+                <div data-collection-item class="line-item">
+                    <div class="card" style="background:var(--surface-alt);">
+                        <div class="card__body">
+                            <div class="form-grid">
+                                {{ form_row(line.designation) }}
+                                {{ form_row(line.quantity) }}
+                                {{ form_row(line.unitPriceHt) }}
+                                {{ form_row(line.vatRate) }}
+                            </div>
+                            <button type="button" class="btn btn--ghost btn--sm" data-collection-remove>Retirer la ligne</button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="help" data-collection-empty {{ form.lines|length > 0 ? 'hidden' }}>Aucune ligne. Ajoutez au moins une prestation.</div>
+    </div>
+</section>

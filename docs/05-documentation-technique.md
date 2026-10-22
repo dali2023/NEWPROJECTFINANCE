@@ -1,7 +1,7 @@
 # Documentation technique
 
 **Application :** ONE ERP Finance & Project Control  
-**Version :** 1.0 — phases 1 et 2  
+**Version :** 1.1 — socle, module 15 et finances  
 **Stack :** PHP 8.3.36, Symfony 7.4.21, PostgreSQL 16, Nginx, Docker Compose
 
 ## 1. Architecture
@@ -36,10 +36,10 @@ Nginx ne peut pas servir un justificatif directement.
 | `src/Controller/` | Contrôleurs HTTP ; un contrôleur par module, `Admin/` pour l'administration |
 | `src/Entity/` | Entités Doctrine et traits (`UuidIdTrait`, `TimestampableTrait`, `SoftDeletableTrait`) |
 | `src/Repository/` | Requêtes, filtres et pagination ; trait `PaginatesQueries` |
-| `src/Security/` | `PermissionChecker`, voters `Project`, `FiscalYear`, `Permission` |
-| `src/Service/` | `Money`, `ReferenceGenerator`, `AuditLogger`, `DocumentStorage` |
+| `src/Security/` | `PermissionChecker`, voters `Project`, `Contract`, `FiscalYear`, `Permission` |
+| `src/Service/` | `Money`, `ReferenceGenerator`, `AuditLogger`, `DocumentStorage`, `ContractBillingService`, `ContractNotificationService`, `MaintenanceScheduleService`, `InvoiceService`, `ExpenseService`, `TreasuryService`, `PartnerService` |
 | `src/Form/` | Formulaires et `DecimalTransformer` |
-| `src/EventListener/` | Journalisation des refus d'accès |
+| `src/EventSubscriber/` | Journalisation des refus d'accès |
 | `src/Enum/` | Statuts et libellés métier |
 | `templates/` | Twig, interface française |
 | `migrations/` | Schéma versionné |
@@ -69,6 +69,23 @@ Contraintes notables de la migration initiale :
 - `CHECK` sur les montants positifs et sur `vat_rate BETWEEN 0 AND 100` ;
 - `ON DELETE RESTRICT` sur les liens métier principaux (client et type de
   projet), `SET NULL` sur les auteurs et `CASCADE` sur les jalons du projet.
+
+### 3.1. Tables livrées pour le module 15 et les finances
+
+La migration `Version20261022021317.php` ajoute les tables suivantes :
+
+| Domaine | Tables |
+|---|---|
+| Contrats | `contracts`, `contract_milestones`, `contract_milestone_histories`, `contract_documents`, `maintenance_contracts`, `contract_receipts`, `contract_reservations`, `contract_renewals`, `retention_guarantees` |
+| Alertes | `contract_notifications` (clé unique d'idempotence) |
+| Facturation | `invoices`, `invoice_lines`, `payments` |
+| Charges | `expenses`, `expense_payments` |
+| Trésorerie | `bank_accounts`, `cash_movements` |
+| Associés | `partners`, `partner_transactions` |
+
+Les montants restent en `NUMERIC(18,3)`, les taux en `NUMERIC(9,4)`. Les
+mouvements de trésorerie portent `source_type` et `source_id` afin de retrouver
+la facture, la charge ou l'opération d'associé à l'origine du flux.
 
 ## 4. Calcul financier exact
 
@@ -112,6 +129,8 @@ Deux niveaux complémentaires :
    séparation des tâches restent dans les contrôleurs.
 2. **Voters Symfony** pour les décisions contextuelles :
    - `ProjectVoter` : voir, modifier, valider, clôturer un projet ;
+   - `ContractVoter` : voir, modifier, valider, renouveler, facturer ou
+     notifier un contrat selon `contract.*` ;
    - `FiscalYearVoter` : écrire sur un exercice ouvert ;
    - `PermissionVoter` : attributs d'administration.
 
@@ -129,9 +148,10 @@ pour BrowserKit.
 ### 5.4. Audit
 
 `AuditLogger` écrit une ligne pour chaque opération sensible : création,
-modification, changement de statut, clôture/réouverture, modification de
-permissions. `AccessDeniedListener` journalise les refus avec l'action `deny` et
-le résultat `denied`, y compris le chemin demandé.
+modification, changement de statut, clôture/réouverture, validation de facture,
+approbation de charge, renouvellement de contrat, libération de retenue et
+modification de permissions. `AccessDeniedListener` journalise les refus avec
+l'action `deny` et le résultat `denied`, y compris le chemin demandé.
 
 ## 6. Requêtes et pagination
 
@@ -158,6 +178,13 @@ docker compose exec -u application php php bin/phpunit
 - `FiscalYearTest` : clôture, réouverture motivée, audit.
 - `RolePermissionAuditTest` : journalisation d'un changement de permissions.
 - `ClientManagementTest` : création et désactivation d'un client (REC-001).
+- `Module15AcceptanceTest` : REC-021 à REC-036 (contrats, facturation,
+  réceptions, réserves, renouvellement, retenues, calendrier, report,
+  maintenance, alertes).
+- `FinanceAcceptanceTest` : REC-025 à REC-027, paiement de charge après
+  approbation et règlement d'une opération d'associé.
+
+Résultat de référence : **41 tests, 189 assertions — OK**.
 
 `DatabaseTestCase` ouvre une transaction PostgreSQL dans `setUp()` et l'annule
 dans `tearDown()`. Le noyau n'est pas redémarré entre les requêtes
@@ -174,6 +201,9 @@ La base de test reste ainsi propre d'une exécution à l'autre.
   Compose : Symfony charge les fichiers `.env` attendus.
 - `schema_filter` exclut `reference_sequences` du schéma Doctrine pour éviter
   sa suppression accidentelle par `doctrine:schema:update`.
+- `config/packages/contract_alerts.yaml` centralise les délais d'alerte
+  contractuelle ; le détail figure dans
+  [`08-parametrage-alertes.md`](08-parametrage-alertes.md).
 - `vendor/` et `var/` sont des volumes Docker nommés (`vendor`, `app_var`) :
   les fichiers chauds restent dans la VM et ne traversent plus le montage
   Windows à chaque requête. Le script d'entrée
@@ -195,19 +225,29 @@ docker compose exec -u application php php bin/console doctrine:schema:validate
 docker compose exec -u application php php bin/console doctrine:migrations:status
 ```
 
-## 9. Points d'extension pour les phases 3 à 6
+## 9. Points d'extension
 
-- Les entités `Invoice`, `Payment`, `Expense`, `TreasuryAccount`,
-  `PartnerAdvance`, `AllocationKey` s'appuieront sur `Money` et sur
-  `reference_sequences` (`FAC-`, `ENC-`, `DEP-`, …).
-- Le `DocumentStorage` est prêt pour les justificatifs : stockage hors public,
-  nommage par UUID, contrôle de type et de taille à ajouter dans le formulaire.
-- Le `FiscalYearVoter` devra être appliqué à chaque écriture financière
-  (facture, dépense, trésorerie, avance).
-- Les exports PDF/XLSX seront ajoutés en phase 6 ; ils devront réutiliser les
-  mêmes filtres et les mêmes services de calcul que les écrans, afin de garantir
-  l'identité des totaux (REC-016).
-- Les notifications pourront utiliser le transport Mailer déjà configuré.
+Les services livrés (`ContractBillingService`, `ContractNotificationService`,
+`MaintenanceScheduleService`, `InvoiceService`, `ExpenseService`,
+`TreasuryService`, `PartnerService`) s'appuient tous sur `Money`, sur
+`reference_sequences` et, pour les flux financiers, sur `TreasuryService`.
+
+Points restant à raccorder :
+
+- **Imputation multi-factures** : ajouter une table d'allocation entre paiement
+  et factures, en conservant l'unicité `(payment_id, invoice_id)`.
+- **Transferts internes** : deux mouvements partageant un identifiant de
+  transfert, neutralisés dans le solde consolidé.
+- **Charges récurrentes** : génération idempotente calquée sur
+  `MaintenanceScheduleService`, avec une clé `(contrat, période)`.
+- **Exercice clôturé** : appliquer le `FiscalYearVoter` à chaque écriture
+  financière, en plus des contrôles d'administration.
+- **Répartition indirecte, immobilisations, résultat annuel et distribution** :
+  réutiliser `Money::allocate()` et les mêmes règles d'audit.
+- **Exports PDF/XLSX** : réutiliser les filtres et services de calcul des écrans
+  afin de garantir l'identité des totaux (REC-016).
+- **Envoi de courriels** : brancher le transport Mailer sur les notifications
+  existantes, sans changer leur clé d'idempotence.
 
 ## 10. Dette technique connue
 
@@ -215,5 +255,9 @@ docker compose exec -u application php php bin/console doctrine:migrations:statu
 2. Pas d'analyse statique (PHPStan) ni de formateur automatique à ce stade.
 3. `config/reference.php` est généré par Symfony et peut être régénéré après
    ajout de bundles.
-4. Les modules financiers et les exports restent à développer ; leurs écrans
-   sont des emplacements explicitement marqués « à venir ».
+4. L'imputation multi-factures, les transferts internes, les charges récurrentes
+   et les modules de reporting/résultat restent à développer.
+5. Les alertes ne sont pas encore envoyées par courriel.
+6. Le garde-fou exercice clôturé doit être étendu à toutes les écritures
+   financières.
+7. Les exports et le tableau de bord financier complet restent à livrer.

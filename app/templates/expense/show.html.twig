@@ -1,0 +1,91 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ expense.reference }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_expense_index') }}">Charges</a> / {{ expense.reference }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ expense.reference }} <span class="badge {{ expense.status.badgeClass }}">{{ expense.status.label }}</span></h1>
+            <div class="page-head__subtitle">
+                {{ expense.label }} · {{ expense.category.label }}
+                {% if expense.project %} · <span class="mono">{{ expense.project.code }}</span>{% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            {% if expense.status.editable and can('expense.manage') %}
+                <a class="btn" href="{{ path('app_expense_edit', {id: expense.idString}) }}">Modifier</a>
+            {% endif %}
+            {% if expense.status.value == 'draft' and can('expense.manage') %}
+                <form method="post" action="{{ path('app_expense_submit', {id: expense.idString}) }}" class="inline-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('expense_submit_' ~ expense.idString) }}">
+                    <button class="btn btn--primary" type="submit">Soumettre</button>
+                </form>
+            {% endif %}
+            {% if expense.status.value in ['draft', 'submitted'] and can('expense.approve') and (not expense.createdBy or expense.createdBy.idString != app.user.idString) %}
+                <form method="post" action="{{ path('app_expense_approve', {id: expense.idString}) }}" class="inline-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('expense_approve_' ~ expense.idString) }}">
+                    <button class="btn btn--primary" type="submit">Approuver</button>
+                </form>
+                <details>
+                    <summary class="btn btn--ghost">Rejeter</summary>
+                    <form method="post" action="{{ path('app_expense_reject', {id: expense.idString}) }}" style="display:grid; gap:.35rem; margin-top:.35rem;">
+                        <input type="hidden" name="_token" value="{{ csrf_token('expense_reject_' ~ expense.idString) }}">
+                        <input class="input" type="text" name="reason" placeholder="Motif du rejet" required>
+                        <button class="btn btn--danger btn--sm" type="submit">Confirmer le rejet</button>
+                    </form>
+                </details>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid--stats" style="margin-bottom:1rem;">
+        <div class="card stat"><div class="stat__label">Montant TTC</div><div class="stat__value">{{ expense.amountTtc|money(expense.currencyCode) }}</div><div class="stat__hint">HT {{ expense.amountHt|money(expense.currencyCode) }} · TVA {{ expense.vatAmount|money(expense.currencyCode) }}</div></div>
+        <div class="card stat"><div class="stat__label">Payé</div><div class="stat__value">{{ expense.paidAmount|money(expense.currencyCode) }}</div><div class="stat__hint">Reste : {{ expense.balance|money(expense.currencyCode) }}</div></div>
+        <div class="card stat"><div class="stat__label">Échéance</div><div class="stat__value">{{ expense.dueDate ? expense.dueDate|date('d/m/Y') : '—' }}</div><div class="stat__hint">Date de la charge : {{ expense.expenseDate|date('d/m/Y') }}</div></div>
+    </div>
+
+    <div class="grid grid--2">
+        <section class="card">
+            <div class="card__header"><div class="card__title">Informations</div></div>
+            <div class="card__body">
+                <dl class="definition">
+                    <dt>Fournisseur</dt><dd>{{ expense.supplier ? expense.supplier.name : '—' }}</dd>
+                    <dt>Projet</dt><dd>{{ expense.project ? expense.project.code ~ ' — ' ~ expense.project.name : '—' }}</dd>
+                    <dt>Contrat</dt><dd>{% if expense.contract %}<a class="mono" href="{{ path('app_contract_show', {id: expense.contract.idString}) }}">{{ expense.contract.reference }}</a>{% else %}—{% endif %}</dd>
+                    <dt>Créée par</dt><dd>{{ expense.createdBy ? expense.createdBy.fullName : '—' }}</dd>
+                    <dt>Approbation</dt><dd>{{ expense.approvedBy ? expense.approvedBy.fullName : '—' }}{% if expense.approvedAt %} le {{ expense.approvedAt|date('d/m/Y H:i') }}{% endif %}</dd>
+                </dl>
+                {% if expense.rejectionReason %}<div class="alert alert--error">Motif de rejet : {{ expense.rejectionReason }}</div>{% endif %}
+                {% if expense.notes %}<div class="divider"></div><p style="white-space:pre-line;">{{ expense.notes }}</p>{% endif %}
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Paiements</div></div>
+            {% if expense.payments is empty %}
+                <div class="empty">Aucun paiement enregistré.</div>
+            {% else %}
+                <div class="table-wrap"><table class="table table--compact"><thead><tr><th>Référence</th><th>Date</th><th>Moyen</th><th class="num">Montant</th><th>Compte</th></tr></thead><tbody>
+                {% for payment in expense.payments %}<tr><td class="mono">{{ payment.reference }}</td><td>{{ payment.paymentDate|date('d/m/Y') }}</td><td>{{ payment.method.label }}</td><td class="num">{{ payment.amount|money(expense.currencyCode) }}</td><td>{{ payment.bankAccount ? payment.bankAccount.name : '—' }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            {% endif %}
+
+            {% if expense.status.value in ['approved', 'partially_paid'] and can('expense.manage') %}
+                <div class="card__body">
+                    <div class="section-title">Payer la charge</div>
+                    <form method="post" action="{{ path('app_expense_payment', {id: expense.idString}) }}" class="form-grid">
+                        <input type="hidden" name="_token" value="{{ csrf_token('expense_payment_' ~ expense.idString) }}">
+                        <div class="field"><label for="amount">Montant</label><input id="amount" class="input" type="text" name="amount" value="{{ expense.balance }}" data-money required></div>
+                        <div class="field"><label for="date">Date</label><input id="date" class="input" type="date" name="date" value="{{ 'now'|date('Y-m-d') }}" required></div>
+                        <div class="field"><label for="method">Moyen</label><select id="method" name="method">{% for method in methods %}<option value="{{ method.value }}">{{ method.label }}</option>{% endfor %}</select></div>
+                        <div class="field"><label for="account">Compte de trésorerie</label><select id="account" name="account"><option value="">Aucun mouvement de trésorerie</option>{% for account in accounts %}<option value="{{ account.idString }}">{{ account.name }}</option>{% endfor %}</select></div>
+                        <div class="field"><label for="bank_reference">Référence bancaire</label><input id="bank_reference" class="input" type="text" name="bank_reference"></div>
+                        <div class="field"><label for="notes">Note</label><input id="notes" class="input" type="text" name="notes"></div>
+                        <div class="field form-actions"><button class="btn btn--primary" type="submit">Enregistrer le paiement</button></div>
+                    </form>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+{% endblock %}

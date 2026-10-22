@@ -1,0 +1,87 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Charges{% endblock %}
+{% block breadcrumb %}Finance / Charges{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Charges et dépenses</h1>
+            <div class="page-head__subtitle">{{ result.total }} charge{{ result.total > 1 ? 's' : '' }}</div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('expense.propose') %}
+                <a class="btn btn--primary" href="{{ path('app_expense_new') }}">Nouvelle charge</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid--stats" style="margin-bottom:1rem;">
+        <div class="card stat">
+            <div class="stat__label">Charges engagées</div>
+            <div class="stat__value">{{ approved_total|money(app_currency) }}</div>
+            <div class="stat__hint">Approuvées, partiellement payées ou payées</div>
+        </div>
+        <div class="card stat">
+            <div class="stat__label">En attente</div>
+            <div class="stat__value">{{ pending_total|money(app_currency) }}</div>
+            <div class="stat__hint">Brouillons et soumises</div>
+        </div>
+    </div>
+
+    <section class="card">
+        <form method="get" action="{{ path('app_expense_index') }}" class="toolbar">
+            <div class="field"><label for="q">Recherche</label><input id="q" name="q" value="{{ filters.term }}" placeholder="Référence, libellé, fournisseur"></div>
+            <div class="field">
+                <label for="fournisseur">Fournisseur</label>
+                <select id="fournisseur" name="fournisseur" data-auto-submit>
+                    <option value="">Tous les fournisseurs</option>
+                    {% for supplier in suppliers %}<option value="{{ supplier.idString }}" {{ filters.supplier and filters.supplier.idString == supplier.idString ? 'selected' }}>{{ supplier.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="projet">Projet</label>
+                <select id="projet" name="projet" data-auto-submit>
+                    <option value="">Tous les projets</option>
+                    {% for project in projects %}<option value="{{ project.idString }}" {{ filters.project and filters.project.idString == project.idString ? 'selected' }}>{{ project.code }} — {{ project.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="statut">Statut</label>
+                <select id="statut" name="statut" data-auto-submit>
+                    <option value="">Tous les statuts</option>
+                    {% for status in statuses %}<option value="{{ status.value }}" {{ filters.status and filters.status == status ? 'selected' }}>{{ status.label }}</option>{% endfor %}
+                </select>
+            </div>
+            <button class="btn" type="submit">Filtrer</button>
+        </form>
+
+        {% if result.items is empty %}
+            <div class="empty">Aucune charge ne correspond aux critères.</div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Référence</th><th>Libellé</th><th>Fournisseur</th><th>Projet</th><th>Date</th><th>Statut</th><th class="num">HT</th><th class="num">TVA</th><th class="num">TTC</th><th class="num">Reste</th><th class="actions"></th></tr></thead>
+                    <tbody>
+                    {% for expense in result.items %}
+                        <tr>
+                            <td><a class="mono" href="{{ path('app_expense_show', {id: expense.idString}) }}">{{ expense.reference }}</a><div class="cell-sub">{{ expense.category.label }}</div></td>
+                            <td>{{ expense.label }}</td>
+                            <td>{{ expense.supplier ? expense.supplier.name : '—' }}</td>
+                            <td>{% if expense.project %}<span class="mono">{{ expense.project.code }}</span>{% else %}—{% endif %}</td>
+                            <td class="num">{{ expense.expenseDate|date('d/m/Y') }}</td>
+                            <td><span class="badge {{ expense.status.badgeClass }}">{{ expense.status.label }}</span></td>
+                            <td class="num">{{ expense.amountHt|money(expense.currencyCode) }}</td>
+                            <td class="num">{{ expense.vatAmount|money(expense.currencyCode) }}</td>
+                            <td class="num">{{ expense.amountTtc|money(expense.currencyCode) }}</td>
+                            <td class="num"><strong>{{ expense.balance|money(expense.currencyCode) }}</strong></td>
+                            <td class="actions"><a class="btn btn--ghost btn--sm" href="{{ path('app_expense_show', {id: expense.idString}) }}">Ouvrir</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

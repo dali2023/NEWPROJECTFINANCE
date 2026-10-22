@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ maintenance.idString ? 'Modifier la maintenance' : 'Nouvelle maintenance' }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / <a href="{{ path('app_contract_show', {id: contract.idString, onglet: 'maintenance'}) }}">{{ contract.reference }}</a> / Maintenance{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ maintenance.idString ? 'Modifier le contrat de maintenance' : 'Nouveau contrat de maintenance' }}</h1>
+            <div class="page-head__subtitle">{{ contract.reference }} — {{ contract.title }}</div>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}
+            <div class="alert alert--error">{{ form_errors(form) }}</div>
+        {% endif %}
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Périmètre et périodicité</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.originalContract) }}
+                    {{ form_row(form.maintenanceStartDate) }}
+                    {{ form_row(form.maintenanceEndDate) }}
+                    {{ form_row(form.durationMonths) }}
+                    {{ form_row(form.billingFrequency) }}
+                    {{ form_row(form.renewalMode) }}
+                    {{ form_row(form.renewalStatus) }}
+                    {{ form_row(form.renewalNoticeDays) }}
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top:1rem;">
+            <div class="card__header"><div class="card__title">Montants</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.periodicAmountHt) }}
+                    {{ form_row(form.annualAmountHt) }}
+                    {{ form_row(form.vatRate) }}
+                </div>
+                <div class="help">Le montant annuel est calculé à partir du montant périodique lorsqu’il est laissé vide.</div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top:1rem;">
+            <div class="card__header"><div class="card__title">Responsables et clauses</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.commercialResponsible) }}
+                    {{ form_row(form.technicalResponsible) }}
+                </div>
+                {{ form_row(form.priceRevisionTerms) }}
+                {{ form_row(form.notes) }}
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer la maintenance</button>
+            <a class="btn btn--ghost" href="{{ path('app_contract_show', {id: contract.idString, onglet: 'maintenance'}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

@@ -1,0 +1,665 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ contract.reference }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / {{ contract.reference }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ contract.title }}</h1>
+            <div class="page-head__subtitle">
+                <span class="mono">{{ contract.reference }}</span>
+                <span class="badge {{ contract.status.badgeClass }}">{{ contract.status.label }}</span>
+                · {{ contract.contractType.label }}
+                {% if contract.client %} · {{ contract.client.name }}{% endif %}
+                {% if contract.project %} · <a class="mono" href="{{ path('app_project_show', {id: contract.project.idString}) }}">{{ contract.project.code }}</a>{% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            {% if is_granted('CONTRACT_RENEW', contract) %}
+                <a class="btn" href="{{ path('app_contract_renewal_new', {id: contract.idString}) }}">Renouveler</a>
+            {% endif %}
+            {% if is_granted('CONTRACT_EDIT', contract) %}
+                <a class="btn btn--primary" href="{{ path('app_contract_edit', {id: contract.idString}) }}">Modifier</a>
+            {% endif %}
+            <a class="btn btn--ghost" href="{{ path('app_contract_notification_index', {contrat: contract.idString}) }}">Alertes</a>
+        </div>
+    </div>
+
+    <nav class="tabs" aria-label="Sections du contrat">
+        {% set tabs = {
+            synthese: 'Synthèse',
+            conditions: 'Conditions',
+            maintenance: 'Maintenance',
+            echeances: 'Échéances',
+            receptions: 'Réceptions et réserves',
+            renouvellements: 'Renouvellements',
+            retenues: 'Retenues de garantie',
+            documents: 'Documents',
+            historique: 'Historique'
+        } %}
+        {% for key, label in tabs %}
+            <a class="tab {{ tab == key ? 'is-active' }}" href="{{ path('app_contract_show', {id: contract.idString, onglet: key}) }}">{{ label }}</a>
+        {% endfor %}
+    </nav>
+
+    {% if tab == 'synthese' %}
+        <div class="grid grid--stats" style="margin-bottom:1rem;">
+            <div class="card stat">
+                <div class="stat__label">Montant contractuel HT</div>
+                <div class="stat__value">{{ contract.amountHt|money(contract.currencyCode) }}</div>
+                <div class="stat__hint">TVA {{ contract.vatRate|money_rate }} · TTC {{ contract.amountTtc|money(contract.currencyCode) }}</div>
+            </div>
+            <div class="card stat">
+                <div class="stat__label">Reste à facturer</div>
+                <div class="stat__value">{{ remaining_to_invoice|money(contract.currencyCode) }}</div>
+                <div class="stat__hint">Facturé : {{ contract.invoicedTotalHt|money(contract.currencyCode) }}</div>
+            </div>
+            <div class="card stat">
+                <div class="stat__label">Échéances en retard</div>
+                <div class="stat__value">{{ overdue_total|money(contract.currencyCode) }}</div>
+                <div class="stat__hint">Échéances actives de ce contrat</div>
+            </div>
+            <div class="card stat">
+                <div class="stat__label">Retenues à libérer</div>
+                <div class="stat__value">{{ retention_remaining|money(contract.currencyCode) }}</div>
+                <div class="stat__hint">Prévision maintenance : {{ forecast_maintenance|money(contract.currencyCode) }}</div>
+            </div>
+        </div>
+
+        <div class="grid grid--2">
+            <section class="card">
+                <div class="card__header"><div class="card__title">Informations générales</div></div>
+                <div class="card__body">
+                    <dl class="definition">
+                        <dt>Client</dt><dd>{% if contract.client %}<a href="{{ path('app_client_show', {id: contract.client.idString}) }}">{{ contract.client.name }}</a>{% else %}—{% endif %}</dd>
+                        <dt>Projet</dt><dd>{% if contract.project %}<a class="mono" href="{{ path('app_project_show', {id: contract.project.idString}) }}">{{ contract.project.code }}</a> — {{ contract.project.name }}{% else %}—{% endif %}</dd>
+                        <dt>Marché / commande</dt><dd>{{ contract.marketReference ?: '—' }}</dd>
+                        <dt>Responsable</dt><dd>{{ contract.responsible ? contract.responsible.fullName : 'Non affecté' }}</dd>
+                        <dt>Créé par</dt><dd>{{ contract.createdBy ? contract.createdBy.fullName : '—' }}</dd>
+                        <dt>Conditions de paiement</dt><dd>{{ contract.paymentTerms ?: '—' }}</dd>
+                    </dl>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card__header"><div class="card__title">Calendrier</div></div>
+                <div class="card__body">
+                    <dl class="definition">
+                        <dt>Signature</dt><dd>{{ contract.signatureDate ? contract.signatureDate|date('d/m/Y') : '—' }}</dd>
+                        <dt>Prise d’effet</dt><dd>{{ contract.effectiveStartDate ? contract.effectiveStartDate|date('d/m/Y') : '—' }}</dd>
+                        <dt>Début d’exécution</dt><dd>{{ contract.executionStartDate ? contract.executionStartDate|date('d/m/Y') : '—' }}</dd>
+                        <dt>Fin contractuelle</dt><dd>{{ contract.effectiveEndDate ? contract.effectiveEndDate|date('d/m/Y') : '—' }}</dd>
+                        <dt>Préavis</dt><dd>{{ contract.noticePeriodDays }} jour(s)</dd>
+                        <dt>Préparation renouvellement</dt><dd>{{ contract.renewalPreparationDate ? contract.renewalPreparationDate|date('d/m/Y') : '—' }}</dd>
+                        <dt>Garantie contractuelle</dt><dd>{{ contract.warrantyDurationDays }} jour(s)</dd>
+                        <dt>Réception définitive indicative</dt><dd>{{ indicative_final_receipt ? indicative_final_receipt|date('d/m/Y') : '—' }}</dd>
+                        <dt>Prochaine action</dt><dd>{{ next_action_date ? next_action_date|date('d/m/Y') : '—' }}</dd>
+                    </dl>
+                </div>
+            </section>
+        </div>
+
+        <div class="grid grid--2" style="margin-top:1rem;">
+            <section class="card">
+                <div class="card__header"><div class="card__title">Alertes actives</div></div>
+                {% if notifications is empty %}
+                    <div class="empty">Aucune alerte active pour ce contrat.</div>
+                {% else %}
+                    <div class="table-wrap">
+                        <table class="table table--compact">
+                            <tbody>
+                            {% for notification in notifications %}
+                                <tr>
+                                    <td><span class="badge {{ notification.severity.badgeClass }}">{{ notification.severity.label }}</span></td>
+                                    <td>
+                                        <div class="cell-main">{{ notification.title }}</div>
+                                        <div class="cell-sub">{{ notification.delayLabel }} · {{ notification.eventDate|date('d/m/Y') }}</div>
+                                    </td>
+                                    <td class="actions"><a class="btn btn--ghost btn--sm" href="{{ path('app_contract_notification_index', {contrat: contract.idString}) }}">Traiter</a></td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </section>
+
+            <section class="card">
+                <div class="card__header"><div class="card__title">Actions contractuelles</div></div>
+                <div class="card__body" style="display:grid; gap:.75rem;">
+                    {% if is_granted('CONTRACT_EDIT', contract) %}
+                        <form method="post" action="{{ path('app_contract_refresh_status', {id: contract.idString}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('contract_refresh_' ~ contract.idString) }}">
+                            <button class="btn btn--sm" type="submit">Recalculer le statut à partir des dates</button>
+                        </form>
+                    {% endif %}
+
+                    {% if contract.status.value == 'draft' and is_granted('CONTRACT_EDIT', contract) %}
+                        <form method="post" action="{{ path('app_contract_transition', {id: contract.idString}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('contract_transition_' ~ contract.idString) }}">
+                            <input type="hidden" name="action" value="submit_signature">
+                            <button class="btn btn--sm" type="submit">Soumettre à signature</button>
+                        </form>
+                    {% endif %}
+                    {% if contract.status.value == 'pending_signature' and is_granted('CONTRACT_VALIDATE', contract) %}
+                        <form method="post" action="{{ path('app_contract_transition', {id: contract.idString}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('contract_transition_' ~ contract.idString) }}">
+                            <input type="hidden" name="action" value="sign">
+                            <button class="btn btn--primary btn--sm" type="submit">Enregistrer la signature</button>
+                        </form>
+                    {% endif %}
+                    {% if contract.status.value == 'signed' and is_granted('CONTRACT_EDIT', contract) %}
+                        <form method="post" action="{{ path('app_contract_transition', {id: contract.idString}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('contract_transition_' ~ contract.idString) }}">
+                            <input type="hidden" name="action" value="start">
+                            <button class="btn btn--sm" type="submit">Démarrer l’exécution</button>
+                        </form>
+                    {% endif %}
+
+                    {% if not contract.status.frozen and is_granted('CONTRACT_VALIDATE', contract) %}
+                        <details>
+                            <summary class="muted">Résilier le contrat</summary>
+                            <form method="post" action="{{ path('app_contract_transition', {id: contract.idString}) }}" style="margin-top:.5rem;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('contract_transition_' ~ contract.idString) }}">
+                                <input type="hidden" name="action" value="terminate">
+                                <div class="field">
+                                    <label for="terminate-reason">Motif de résiliation</label>
+                                    <input id="terminate-reason" type="text" name="reason" required maxlength="255">
+                                </div>
+                                <button class="btn btn--danger btn--sm" type="submit">Confirmer la résiliation</button>
+                            </form>
+                        </details>
+                    {% endif %}
+
+                    {% if not contract.status.frozen and is_granted('CONTRACT_VALIDATE', contract) %}
+                        <form method="post" action="{{ path('app_contract_transition', {id: contract.idString}) }}" data-confirm="Clôturer ce contrat ? Il deviendra non modifiable.">
+                            <input type="hidden" name="_token" value="{{ csrf_token('contract_transition_' ~ contract.idString) }}">
+                            <input type="hidden" name="action" value="close">
+                            <input type="hidden" name="reason" value="Clôture contractuelle">
+                            <button class="btn btn--sm" type="submit">Clôturer le contrat</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+    {% elseif tab == 'conditions' %}
+        <div class="grid grid--2">
+            <section class="card">
+                <div class="card__header"><div class="card__title">Conditions financières</div></div>
+                <div class="card__body">
+                    <dl class="definition">
+                        <dt>Montant HT</dt><dd class="num">{{ contract.amountHt|money(contract.currencyCode) }}</dd>
+                        <dt>Taux de TVA</dt><dd>{{ contract.vatRate|money_rate }}</dd>
+                        <dt>Montant TVA</dt><dd class="num">{{ contract.vatAmount|money(contract.currencyCode) }}</dd>
+                        <dt>Montant TTC</dt><dd class="num"><strong>{{ contract.amountTtc|money(contract.currencyCode) }}</strong></dd>
+                        <dt>Devise</dt><dd>{{ contract.currencyCode }}</dd>
+                        <dt>Conditions de paiement</dt><dd>{{ contract.paymentTerms ?: '—' }}</dd>
+                        <dt>Total échéancier</dt><dd class="num">{{ contract.milestonesTotalHt|money(contract.currencyCode) }}</dd>
+                    </dl>
+                </div>
+            </section>
+            <section class="card">
+                <div class="card__header"><div class="card__title">Clauses</div></div>
+                <div class="card__body">
+                    <dl class="definition">
+                        <dt>Mode de renouvellement</dt><dd>{{ contract.renewalMode.label }}</dd>
+                        <dt>Préavis</dt><dd>{{ contract.noticePeriodDays }} jour(s)</dd>
+                        <dt>Durée de garantie</dt><dd>{{ contract.warrantyDurationDays }} jour(s)</dd>
+                        <dt>Document principal</dt><dd>{{ contract.mainDocument ? contract.mainDocument.label : '—' }}</dd>
+                    </dl>
+                    {% if contract.renewalTerms %}
+                        <div class="divider"></div>
+                        <div class="section-title">Conditions de renouvellement</div>
+                        <p style="white-space:pre-line;">{{ contract.renewalTerms }}</p>
+                    {% endif %}
+                    {% if contract.notes %}
+                        <div class="divider"></div>
+                        <div class="section-title">Observations</div>
+                        <p style="white-space:pre-line;">{{ contract.notes }}</p>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+    {% elseif tab == 'maintenance' %}
+        <section class="card">
+            <div class="card__header">
+                <div class="card__title">Contrats de maintenance</div>
+                {% if is_granted('CONTRACT_EDIT', contract) %}
+                    <a class="btn btn--sm btn--primary" href="{{ path('app_contract_maintenance_new', {id: contract.idString}) }}">Ajouter une maintenance</a>
+                {% endif %}
+            </div>
+            {% if contract.maintenanceContracts is empty %}
+                <div class="empty">Aucun contrat de maintenance rattaché.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Référence</th>
+                            <th>Période</th>
+                            <th>Périodicité</th>
+                            <th class="num">Montant périodique</th>
+                            <th class="num">Montant annuel</th>
+                            <th>Préparation</th>
+                            <th>Renouvellement</th>
+                            <th>Responsables</th>
+                            <th class="actions"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for maintenance in contract.maintenanceContracts %}
+                            <tr>
+                                <td class="mono">{{ maintenance.reference }}</td>
+                                <td>{{ maintenance.maintenanceStartDate ? maintenance.maintenanceStartDate|date('d/m/Y') : '—' }} → {{ maintenance.maintenanceEndDate ? maintenance.maintenanceEndDate|date('d/m/Y') : '—' }}</td>
+                                <td>{{ maintenance.billingFrequency.label }}</td>
+                                <td class="num">{{ maintenance.periodicAmountHt|money(contract.currencyCode) }}</td>
+                                <td class="num">{{ maintenance.annualAmountHt|money(contract.currencyCode) }}</td>
+                                <td class="num">{{ maintenance.renewalPreparationDate ? maintenance.renewalPreparationDate|date('d/m/Y') : '—' }}</td>
+                                <td><span class="badge {{ maintenance.renewalStatus.badgeClass }}">{{ maintenance.renewalStatus.label }}</span></td>
+                                <td>
+                                    <div class="cell-sub">Commercial : {{ maintenance.commercialResponsible ? maintenance.commercialResponsible.fullName : '—' }}</div>
+                                    <div class="cell-sub">Technique : {{ maintenance.technicalResponsible ? maintenance.technicalResponsible.fullName : '—' }}</div>
+                                </td>
+                                <td class="actions">
+                                    {% if is_granted('CONTRACT_EDIT', contract) %}
+                                        <a class="btn btn--ghost btn--sm" href="{{ path('app_contract_maintenance_edit', {id: contract.idString, maintenanceId: maintenance.idString}) }}">Modifier</a>
+                                        <form method="post" action="{{ path('app_contract_maintenance_generate', {id: contract.idString, maintenanceId: maintenance.idString}) }}" class="inline-form">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('maintenance_generate_' ~ maintenance.idString) }}">
+                                            <button class="btn btn--sm" type="submit">Générer les échéances</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+
+    {% elseif tab == 'echeances' %}
+        <section class="card">
+            <div class="card__header">
+                <div class="card__title">Échéances contractuelles</div>
+                {% if is_granted('CONTRACT_EDIT', contract) %}
+                    <a class="btn btn--sm btn--primary" href="{{ path('app_contract_milestone_new', {id: contract.idString}) }}">Ajouter une échéance</a>
+                {% endif %}
+            </div>
+            {% if contract.milestones is empty %}
+                <div class="empty">Aucune échéance contractuelle.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table table--compact">
+                        <thead>
+                        <tr>
+                            <th>Référence</th>
+                            <th>Événement</th>
+                            <th>Prévue</th>
+                            <th>Réalisée</th>
+                            <th>Réalisation</th>
+                            <th>Facturation</th>
+                            <th class="num">Prévu HT</th>
+                            <th class="num">Facturé HT</th>
+                            <th class="num">Reste</th>
+                            <th class="actions"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for milestone in contract.milestones %}
+                            <tr>
+                                <td class="mono">{{ milestone.reference }}</td>
+                                <td>
+                                    <div class="cell-main">{{ milestone.label }}</div>
+                                    <div class="cell-sub">{{ milestone.milestoneType.label }}</div>
+                                    {% if milestone.isOverdue %}<span class="badge badge--danger">En retard</span>{% endif %}
+                                </td>
+                                <td class="num">{{ milestone.plannedDate ? milestone.plannedDate|date('d/m/Y') : '—' }}</td>
+                                <td class="num">{{ milestone.actualDate ? milestone.actualDate|date('d/m/Y') : '—' }}</td>
+                                <td><span class="badge {{ milestone.completionStatus.badgeClass }}">{{ milestone.completionStatus.label }}</span></td>
+                                <td>
+                                    <span class="badge {{ milestone.billingStatus.badgeClass }}">{{ milestone.billingStatus.label }}</span>
+                                    {% if milestone.invoiceReference %}<div class="cell-sub mono">{{ milestone.invoiceReference }}</div>{% endif %}
+                                </td>
+                                <td class="num">{{ milestone.amountHt|money(contract.currencyCode) }}</td>
+                                <td class="num">{{ milestone.billedAmountHt|money(contract.currencyCode) }}</td>
+                                <td class="num">{{ milestone.remainingToInvoiceHt|money(contract.currencyCode) }}</td>
+                                <td class="actions" style="min-width:14rem;">
+                                    {% if is_granted('CONTRACT_EDIT', contract) %}
+                                        <a class="btn btn--ghost btn--sm" href="{{ path('app_contract_milestone_edit', {id: contract.idString, milestoneId: milestone.idString}) }}">Modifier</a>
+                                        {% if not milestone.cancelled and milestone.completionStatus.value != 'completed' %}
+                                            <form method="post" action="{{ path('app_contract_milestone_action', {id: contract.idString, milestoneId: milestone.idString}) }}" class="inline-form">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('contract_milestone_action_' ~ milestone.idString) }}">
+                                                <input type="hidden" name="action" value="complete">
+                                                <button class="btn btn--sm" type="submit">Réalisée</button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if is_granted('CONTRACT_BILL', contract) and not milestone.fullyInvoiced and milestone.billingStatus.value != 'blocked' %}
+                                        {% if milestone.completionStatus.value == 'completed' and milestone.billingStatus.value not in ['ready_to_invoice', 'partially_invoiced'] %}
+                                            <form method="post" action="{{ path('app_contract_milestone_action', {id: contract.idString, milestoneId: milestone.idString}) }}" class="inline-form">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('contract_milestone_action_' ~ milestone.idString) }}">
+                                                <input type="hidden" name="action" value="ready">
+                                                <button class="btn btn--sm" type="submit">Prête</button>
+                                            </form>
+                                        {% endif %}
+                                        {% if milestone.billingStatus.value in ['ready_to_invoice', 'partially_invoiced'] %}
+                                            <form method="post" action="{{ path('app_contract_milestone_action', {id: contract.idString, milestoneId: milestone.idString}) }}" class="inline-form" style="margin-top:.35rem;">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('contract_milestone_action_' ~ milestone.idString) }}">
+                                                <input type="hidden" name="action" value="invoice">
+                                                <button class="btn btn--sm btn--primary" type="submit">Créer la facture</button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if is_granted('CONTRACT_BILL', contract) and milestone.billingStatus.value != 'blocked' %}
+                                        <details style="margin-top:.35rem;">
+                                            <summary class="muted">Reporter / bloquer</summary>
+                                            <form method="post" action="{{ path('app_contract_milestone_action', {id: contract.idString, milestoneId: milestone.idString}) }}" style="display:grid; gap:.35rem; margin-top:.35rem;">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('contract_milestone_action_' ~ milestone.idString) }}">
+                                                <input type="hidden" name="action" value="postpone">
+                                                <input class="input" type="date" name="new_date" required>
+                                                <input class="input" type="text" name="reason" placeholder="Motif du report" required>
+                                                <button class="btn btn--sm" type="submit">Reporter</button>
+                                            </form>
+                                            <form method="post" action="{{ path('app_contract_milestone_action', {id: contract.idString, milestoneId: milestone.idString}) }}" style="display:grid; gap:.35rem; margin-top:.35rem;">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('contract_milestone_action_' ~ milestone.idString) }}">
+                                                <input type="hidden" name="action" value="block">
+                                                <input class="input" type="text" name="reason" placeholder="Motif du blocage" required>
+                                                <button class="btn btn--sm btn--danger" type="submit">Bloquer</button>
+                                            </form>
+                                        </details>
+                                    {% endif %}
+                                    {% if is_granted('CONTRACT_BILL', contract) and milestone.billingStatus.value == 'blocked' %}
+                                        <form method="post" action="{{ path('app_contract_milestone_action', {id: contract.idString, milestoneId: milestone.idString}) }}" class="inline-form">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('contract_milestone_action_' ~ milestone.idString) }}">
+                                            <input type="hidden" name="action" value="unblock">
+                                            <button class="btn btn--sm" type="submit">Débloquer</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <th colspan="6" style="text-align:right;">Total</th>
+                            <th class="num">{{ contract.milestonesTotalHt|money(contract.currencyCode) }}</th>
+                            <th class="num">{{ contract.invoicedTotalHt|money(contract.currencyCode) }}</th>
+                            <th class="num">{{ remaining_to_invoice|money(contract.currencyCode) }}</th>
+                            <th></th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+
+    {% elseif tab == 'receptions' %}
+        <section class="card">
+            <div class="card__header">
+                <div class="card__title">Réceptions</div>
+                {% if is_granted('CONTRACT_EDIT', contract) %}
+                    <a class="btn btn--sm btn--primary" href="{{ path('app_contract_receipt_new', {id: contract.idString}) }}">Ajouter une réception</a>
+                {% endif %}
+            </div>
+            {% if contract.receipts is empty %}
+                <div class="empty">Aucune réception enregistrée.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Prévue</th>
+                            <th>Effective</th>
+                            <th>Procès-verbal</th>
+                            <th>Garantie</th>
+                            <th>Réserves</th>
+                            <th>Validation</th>
+                            <th class="actions"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for receipt in contract.receipts %}
+                            <tr>
+                                <td>{{ receipt.receiptType.label }}</td>
+                                <td class="num">{{ receipt.plannedDate ? receipt.plannedDate|date('d/m/Y') : '—' }}</td>
+                                <td class="num">{{ receipt.actualDate ? receipt.actualDate|date('d/m/Y') : '—' }}</td>
+                                <td>{{ receipt.pvReference ?: '—' }}</td>
+                                <td class="num">{{ receipt.warrantyStartDate ? receipt.warrantyStartDate|date('d/m/Y') : '—' }} → {{ receipt.warrantyEndDate ? receipt.warrantyEndDate|date('d/m/Y') : '—' }}</td>
+                                <td>
+                                    <span class="badge {{ receipt.reservationsStatus.badgeClass }}">{{ receipt.reservationsStatus.label }}</span>
+                                    <div class="cell-sub">{{ receipt.openReservationsCount }} ouverte(s)</div>
+                                </td>
+                                <td>
+                                    {% if receipt.validatedAt %}
+                                        <span class="badge badge--success">Validée</span>
+                                        <div class="cell-sub">{{ receipt.validatedBy ? receipt.validatedBy.fullName : '' }}</div>
+                                    {% else %}
+                                        <span class="badge badge--warning">À valider</span>
+                                    {% endif %}
+                                </td>
+                                <td class="actions">
+                                    {% if is_granted('CONTRACT_EDIT', contract) %}
+                                        <a class="btn btn--ghost btn--sm" href="{{ path('app_contract_receipt_edit', {id: contract.idString, receiptId: receipt.idString}) }}">Modifier</a>
+                                        <a class="btn btn--ghost btn--sm" href="{{ path('app_contract_reservation_new', {id: contract.idString, receiptId: receipt.idString}) }}">Réserve</a>
+                                    {% endif %}
+                                    {% if not receipt.validatedAt and is_granted('CONTRACT_VALIDATE', contract) %}
+                                        <form method="post" action="{{ path('app_contract_receipt_validate', {id: contract.idString, receiptId: receipt.idString}) }}" class="inline-form">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('contract_receipt_validate_' ~ receipt.idString) }}">
+                                            <button class="btn btn--sm btn--primary" type="submit">Valider</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="card" style="margin-top:1rem;">
+            <div class="card__header"><div class="card__title">Réserves</div></div>
+            {% set has_reservations = false %}
+            {% for receipt in contract.receipts %}{% if receipt.reservations is not empty %}{% set has_reservations = true %}{% endif %}{% endfor %}
+            {% if not has_reservations %}
+                <div class="empty">Aucune réserve constatée.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table table--compact">
+                        <thead>
+                        <tr>
+                            <th>Réception</th>
+                            <th>Description</th>
+                            <th>Constat</th>
+                            <th>Limite de levée</th>
+                            <th>Statut</th>
+                            <th class="actions"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for receipt in contract.receipts %}
+                            {% for reservation in receipt.reservations %}
+                                <tr>
+                                    <td>{{ receipt.receiptType.label }}</td>
+                                    <td>{{ reservation.description }}</td>
+                                    <td class="num">{{ reservation.dateIdentified ? reservation.dateIdentified|date('d/m/Y') : '—' }}</td>
+                                    <td class="num">{{ reservation.plannedResolutionDate ? reservation.plannedResolutionDate|date('d/m/Y') : '—' }}</td>
+                                    <td><span class="badge {{ reservation.status.badgeClass }}">{{ reservation.status.label }}</span></td>
+                                    <td class="actions">
+                                        {% if reservation.open and is_granted('CONTRACT_EDIT', contract) %}
+                                            <form method="post" action="{{ path('app_contract_reservation_lift', {id: contract.idString, reservationId: reservation.idString}) }}" class="inline-form">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('contract_reservation_lift_' ~ reservation.idString) }}">
+                                                <input type="hidden" name="date" value="{{ 'now'|date('Y-m-d') }}">
+                                                <button class="btn btn--sm" type="submit">Lever</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+
+    {% elseif tab == 'renouvellements' %}
+        <section class="card">
+            <div class="card__header">
+                <div class="card__title">Historique des décisions de renouvellement</div>
+                {% if is_granted('CONTRACT_RENEW', contract) %}
+                    <a class="btn btn--sm btn--primary" href="{{ path('app_contract_renewal_new', {id: contract.idString}) }}">Enregistrer une décision</a>
+                {% endif %}
+            </div>
+            {% if contract.renewals is empty %}
+                <div class="empty">Aucune décision de renouvellement enregistrée.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Décision</th>
+                            <th>Date</th>
+                            <th>Date limite</th>
+                            <th class="num">Montant HT</th>
+                            <th>Nouveau contrat</th>
+                            <th>Responsable</th>
+                            <th>Notes</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for renewal in contract.renewals %}
+                            <tr>
+                                <td><span class="badge {{ renewal.decisionStatus.badgeClass }}">{{ renewal.decisionStatus.label }}</span></td>
+                                <td class="num">{{ renewal.decisionDate ? renewal.decisionDate|date('d/m/Y') : '—' }}</td>
+                                <td class="num">{{ renewal.renewalDeadline ? renewal.renewalDeadline|date('d/m/Y') : '—' }}</td>
+                                <td class="num">{{ renewal.renewalAmountHt|money(contract.currencyCode) }}</td>
+                                <td>{% if renewal.newContract %}<a class="mono" href="{{ path('app_contract_show', {id: renewal.newContract.idString}) }}">{{ renewal.newContract.reference }}</a>{% else %}—{% endif %}</td>
+                                <td>{{ renewal.responsible ? renewal.responsible.fullName : '—' }}</td>
+                                <td class="muted">{{ renewal.notes ?: '—' }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+
+    {% elseif tab == 'retenues' %}
+        <section class="card">
+            <div class="card__header">
+                <div class="card__title">Retenues de garantie</div>
+                <div class="muted" style="font-size:.8rem;">Restant à libérer : {{ retention_remaining|money(contract.currencyCode) }}</div>
+                {% if is_granted('CONTRACT_EDIT', contract) %}
+                    <a class="btn btn--sm btn--primary" href="{{ path('app_contract_retention_new', {id: contract.idString}) }}">Ajouter une retenue</a>
+                {% endif %}
+            </div>
+            {% if contract.retentionGuarantees is empty %}
+                <div class="empty">Aucune retenue de garantie.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th class="num">Montant</th>
+                            <th class="num">Libéré</th>
+                            <th class="num">Reste</th>
+                            <th>Éligibilité</th>
+                            <th>Demande</th>
+                            <th>Libération effective</th>
+                            <th>Statut</th>
+                            <th class="actions"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for retention in contract.retentionGuarantees %}
+                            <tr>
+                                <td class="num">{{ retention.amount|money(retention.currencyCode) }}</td>
+                                <td class="num">{{ retention.releasedAmount|money(retention.currencyCode) }}</td>
+                                <td class="num">{{ retention.remainingToRelease|money(retention.currencyCode) }}</td>
+                                <td class="num">{{ retention.eligibilityDate ? retention.eligibilityDate|date('d/m/Y') : '—' }}</td>
+                                <td class="num">{{ retention.releaseRequestDate ? retention.releaseRequestDate|date('d/m/Y') : '—' }}</td>
+                                <td class="num">{{ retention.actualReleaseDate ? retention.actualReleaseDate|date('d/m/Y') : '—' }}</td>
+                                <td><span class="badge {{ retention.status.badgeClass }}">{{ retention.status.label }}</span></td>
+                                <td class="actions">
+                                    {% if is_granted('CONTRACT_BILL', contract) and retention.status.value != 'released' %}
+                                        <details>
+                                            <summary class="muted">Libérer</summary>
+                                            <form method="post" action="{{ path('app_contract_retention_release', {id: contract.idString, retentionId: retention.idString}) }}" style="display:grid; gap:.35rem; margin-top:.35rem;">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('contract_retention_release_' ~ retention.idString) }}">
+                                                <input class="input" type="text" name="amount" value="{{ retention.remainingToRelease }}" required>
+                                                <input class="input" type="date" name="date" value="{{ 'now'|date('Y-m-d') }}">
+                                                <button class="btn btn--sm" type="submit">Enregistrer</button>
+                                            </form>
+                                        </details>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+
+    {% elseif tab == 'documents' %}
+        <section class="card">
+            <div class="card__header">
+                <div class="card__title">Documents contractuels</div>
+                {% if is_granted('CONTRACT_EDIT', contract) %}
+                    <a class="btn btn--sm btn--primary" href="{{ path('app_contract_document_new', {id: contract.idString}) }}">Déposer un document</a>
+                {% endif %}
+            </div>
+            {% if contract.documents is empty %}
+                <div class="empty">Aucun document déposé.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead><tr><th>Libellé</th><th>Nature</th><th>Type MIME</th><th class="num">Taille</th><th>Déposé par</th><th class="actions"></th></tr></thead>
+                        <tbody>
+                        {% for document in contract.documents %}
+                            <tr>
+                                <td>{{ document.label }}{% if contract.mainDocument and contract.mainDocument.idString == document.idString %} <span class="badge badge--primary">Principal</span>{% endif %}</td>
+                                <td>{{ document.documentType.label }}</td>
+                                <td class="muted">{{ document.mimeType ?: '—' }}</td>
+                                <td class="num">{{ document.fileSize ? (document.fileSize / 1024)|round(1) ~ ' Ko' : '—' }}</td>
+                                <td>{{ document.uploadedBy ? document.uploadedBy.fullName : '—' }}</td>
+                                <td class="actions"><a class="btn btn--ghost btn--sm" href="{{ path('app_contract_document_download', {id: contract.idString, documentId: document.idString}) }}">Télécharger</a></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+
+    {% elseif tab == 'historique' %}
+        <section class="card">
+            <div class="card__header"><div class="card__title">Historique des opérations</div></div>
+            {% if history is empty %}
+                <div class="empty">Aucune opération enregistrée pour ce contrat.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table table--compact">
+                        <thead><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Résultat</th><th>Détail</th></tr></thead>
+                        <tbody>
+                        {% for entry in history %}
+                            <tr>
+                                <td class="mono">{{ entry.occurredAt|date('d/m/Y H:i') }}</td>
+                                <td>{{ entry.username ?: '—' }}</td>
+                                <td><span class="tag">{{ entry.action }}</span></td>
+                                <td><span class="badge {{ entry.result == 'success' ? 'badge--success' : 'badge--danger' }}">{{ entry.result }}</span></td>
+                                <td class="muted">{{ entry.message ?: '—' }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Associés{% endblock %}
+{% block breadcrumb %}Finance / Associés{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Associés</h1>
+            <div class="page-head__subtitle">{{ partners|length }} associé{{ partners|length > 1 ? 's' : '' }} · {{ total_ownership|money_rate }} du capital renseigné</div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('partner.manage') %}<a class="btn btn--primary" href="{{ path('app_partner_new') }}">Nouvel associé</a>{% endif %}
+        </div>
+    </div>
+
+    <section class="card" style="margin-bottom:1rem;">
+        <div class="card__header"><div class="card__title">Actionnariat</div></div>
+        {% if partners is empty %}
+            <div class="empty">Aucun associé enregistré.</div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Associé</th><th>Forme</th><th class="num">Part du capital</th><th class="num">Capital apporté</th><th class="num">Compte courant</th><th class="num">Dividendes reçus</th><th>Statut</th><th class="actions"></th></tr></thead>
+                    <tbody>
+                    {% for partner in partners %}
+                        <tr>
+                            <td><a href="{{ path('app_partner_show', {id: partner.idString}) }}">{{ partner.name }}</a><div class="cell-sub mono">{{ partner.code }}{% if partner.email %} · {{ partner.email }}{% endif %}</div></td>
+                            <td>{{ partner.partnerType.label }}</td>
+                            <td class="num">{{ partner.ownershipPercent|money_rate }}</td>
+                            <td class="num">{{ partner.capitalContributed|money(app_currency) }}</td>
+                            <td class="num">{{ partner.currentAccountBalance|money(app_currency) }}</td>
+                            <td class="num">{{ partner.dividendsReceived|money(app_currency) }}</td>
+                            <td><span class="badge {{ partner.active ? 'badge--success' : 'badge--neutral' }}">{{ partner.active ? 'Actif' : 'Inactif' }}</span></td>
+                            <td class="actions"><a class="btn btn--ghost btn--sm" href="{{ path('app_partner_show', {id: partner.idString}) }}">Ouvrir</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="card">
+        <div class="card__header"><div class="card__title">Opérations récentes</div></div>
+        {% if result.items is empty %}
+            <div class="empty">Aucune opération enregistrée.</div>
+        {% else %}
+            <div class="table-wrap"><table class="table"><thead><tr><th>Référence</th><th>Associé</th><th>Nature</th><th>Date</th><th class="num">Montant</th><th>Statut</th><th class="actions"></th></tr></thead><tbody>
+            {% for transaction in result.items %}<tr><td class="mono">{{ transaction.reference }}</td><td>{{ transaction.partner ? transaction.partner.name : '—' }}</td><td>{{ transaction.transactionType.label }}</td><td class="num">{{ transaction.transactionDate|date('d/m/Y') }}</td><td class="num">{{ transaction.amount|money(transaction.currencyCode) }}</td><td><span class="badge {{ transaction.status.badgeClass }}">{{ transaction.status.label }}</span></td><td class="actions">{% if transaction.partner %}<a class="btn btn--ghost btn--sm" href="{{ path('app_partner_show', {id: transaction.partner.idString}) }}">Ouvrir</a>{% endif %}</td></tr>{% endfor %}
+            </tbody></table></div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

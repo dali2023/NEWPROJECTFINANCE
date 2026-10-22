@@ -67,10 +67,10 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="card stat stat--muted">
-                <div class="stat__label">Marge prévisionnelle</div>
-                <div class="stat__value">Phase 3</div>
-                <div class="stat__hint">Calculée avec les charges réelles</div>
+            <div class="card stat">
+                <div class="stat__label">Marge directe facturée</div>
+                <div class="stat__value">{{ direct_margin|money(project.currencyCode) }}</div>
+                <div class="stat__hint">Facturé TTC − charges ; hors répartition indirecte</div>
             </div>
         </div>
 
@@ -197,10 +197,11 @@
                 <div class="card__body">
                     <dl class="definition">
                         <dt>Budget prévisionnel</dt><dd class="num">{{ project.budgetAmount|money(project.currencyCode) }}</dd>
-                        <dt>Charges engagées</dt><dd class="num">—</dd>
-                        <dt>Charges payées</dt><dd class="num">—</dd>
+                        <dt>Charges engagées</dt><dd class="num">{{ expense_total|money(project.currencyCode) }}</dd>
+                        <dt>Charges payées</dt><dd class="num">{{ expense_paid_total|money(project.currencyCode) }}</dd>
                         <dt>Charges indirectes réparties</dt><dd class="num">—</dd>
-                        <dt>Marge réalisée</dt><dd class="num">—</dd>
+                        <dt>Facturé TTC</dt><dd class="num">{{ invoiced_total|money(project.currencyCode) }}</dd>
+                        <dt>Encaissé</dt><dd class="num">{{ collected_total|money(project.currencyCode) }}</dd>
                     </dl>
                 </div>
             </section>
@@ -208,40 +209,116 @@
                 <div class="card__header"><div class="card__title">Rentabilité</div></div>
                 <div class="card__body">
                     <div class="placeholder-module">
-                        Les indicateurs de rentabilité (marge prévisionnelle et réalisée, taux de marge,
-                        coût complet avec charges indirectes réparties) seront calculés à partir du
-                        module Charges (phase 3) et du module Répartition (phase 4).
+                        La marge directe reprend le facturé TTC diminué des charges TTC du projet.
+                        La marge complète, après répartition des charges indirectes, sera calculée
+                        avec le module Répartition.
                     </div>
                 </div>
             </section>
         </div>
     {% elseif tab == 'facturation' %}
         <section class="card">
-            <div class="card__header"><div class="card__title">Factures et encaissements</div></div>
-            <div class="card__body">
-                <div class="placeholder-module">
-                    Module de facturation (M04) — phase 3. Il gérera les factures, acomptes, avoirs,
-                    encaissements et leur affectation aux factures, y compris les encaissements partiels.
-                </div>
+            <div class="card__header">
+                <div class="card__title">Factures et encaissements</div>
+                {% if can('invoice.manage') %}
+                    <a class="btn btn--primary btn--sm" href="{{ path('app_invoice_new') }}">Nouvelle facture</a>
+                {% endif %}
             </div>
+            {% if invoices is empty %}
+                <div class="empty">Aucune facture rattachée à ce projet.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Numéro</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                            <th class="num">TTC</th>
+                            <th class="num">Encaissé</th>
+                            <th class="num">Solde</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for invoice in invoices %}
+                            <tr>
+                                <td><a class="mono" href="{{ path('app_invoice_show', {id: invoice.idString}) }}">{{ invoice.number }}</a></td>
+                                <td>{{ invoice.issueDate|date('d/m/Y') }}</td>
+                                <td><span class="badge {{ invoice.status.badgeClass }}">{{ invoice.status.label }}</span></td>
+                                <td class="num">{{ invoice.amountTtc|money(invoice.currencyCode) }}</td>
+                                <td class="num">{{ invoice.paidAmount|money(invoice.currencyCode) }}</td>
+                                <td class="num">{{ invoice.balance|money(invoice.currencyCode) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <th colspan="3" style="text-align:right;">Total</th>
+                            <th class="num">{{ invoiced_total|money(project.currencyCode) }}</th>
+                            <th class="num">{{ collected_total|money(project.currencyCode) }}</th>
+                            <th class="num"></th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% endif %}
         </section>
     {% elseif tab == 'charges' %}
         <section class="card">
-            <div class="card__header"><div class="card__title">Charges du projet</div></div>
-            <div class="card__body">
-                <div class="placeholder-module">
-                    Module de charges (M05) — phase 3. Dépenses directes, charges récurrentes,
-                    justificatifs et paiements.
-                </div>
+            <div class="card__header">
+                <div class="card__title">Charges du projet</div>
+                {% if can('expense.manage') %}
+                    <a class="btn btn--primary btn--sm" href="{{ path('app_expense_new') }}">Nouvelle charge</a>
+                {% endif %}
             </div>
+            {% if expenses is empty %}
+                <div class="empty">Aucune charge rattachée à ce projet.</div>
+            {% else %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Référence</th>
+                            <th>Libellé</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                            <th class="num">TTC</th>
+                            <th class="num">Payé</th>
+                            <th class="num">Solde</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for expense in expenses %}
+                            <tr>
+                                <td><a class="mono" href="{{ path('app_expense_show', {id: expense.idString}) }}">{{ expense.reference }}</a></td>
+                                <td>{{ expense.label }}</td>
+                                <td>{{ expense.expenseDate|date('d/m/Y') }}</td>
+                                <td><span class="badge {{ expense.status.badgeClass }}">{{ expense.status.label }}</span></td>
+                                <td class="num">{{ expense.amountTtc|money(expense.currencyCode) }}</td>
+                                <td class="num">{{ expense.paidAmount|money(expense.currencyCode) }}</td>
+                                <td class="num">{{ expense.balance|money(expense.currencyCode) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <th colspan="4" style="text-align:right;">Total</th>
+                            <th class="num">{{ expense_total|money(project.currencyCode) }}</th>
+                            <th class="num">{{ expense_paid_total|money(project.currencyCode) }}</th>
+                            <th class="num"></th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% endif %}
         </section>
     {% elseif tab == 'documents' %}
         <section class="card">
             <div class="card__header"><div class="card__title">Documents</div></div>
             <div class="card__body">
                 <div class="placeholder-module">
-                    Le stockage des justificatifs est prévu hors du répertoire public, avec contrôle
-                    d’accès. L’interface de dépôt sera livrée en phase 3.
+                    Les justificatifs sont déposés depuis les fiches contrat, facture ou charge.
+                    Ils sont stockés hors du répertoire public et téléchargés après contrôle d’accès.
                 </div>
             </div>
         </section>

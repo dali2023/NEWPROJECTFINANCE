@@ -132,6 +132,30 @@ fiscal_years 1---1 annual_results 1---n profit_distributions 1---n profit_distri
 users n---n roles n---n permissions ; documents / audit_logs = traçabilité transversale
 ```
 
+## État d'implémentation — module 15 et finances
+
+Le modèle cible ci-dessus conserve les noms du cahier des charges. Les tables
+effectivement créées par la migration `Version20261022021317.php` sont :
+
+| Domaine | Tables livrées |
+|---|---|
+| Contrats | `contracts`, `contract_milestones`, `contract_milestone_histories`, `contract_documents`, `maintenance_contracts`, `contract_receipts`, `contract_reservations`, `contract_renewals`, `retention_guarantees` |
+| Alertes | `contract_notifications` |
+| Facturation | `invoices`, `invoice_lines`, `payments` |
+| Charges | `expenses`, `expense_payments` |
+| Trésorerie | `bank_accounts`, `cash_movements` |
+| Associés | `partners`, `partner_transactions` |
+
+Points d'implémentation à retenir :
+
+- `contract_milestones` porte deux statuts indépendants : réalisation
+  (`completion_status`) et facturation (`billing_status`).
+- `contract_notifications` possède une clé unique d'idempotence construite sur
+  le contrat, l'événement, la date, le délai, le destinataire et l'entité liée.
+- `cash_movements` porte `source_type` et `source_id` pour retrouver la facture,
+  la charge ou l'opération d'associé à l'origine du flux.
+- Les montants restent en `NUMERIC(18,3)` et les taux en `NUMERIC(9,4)`.
+
 ## Contraintes d'intégrité (§5.4) — implémentation
 
 | # | Contrainte | Où |

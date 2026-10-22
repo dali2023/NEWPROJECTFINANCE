@@ -33,7 +33,7 @@ class ClientRepository extends ServiceEntityRepository
     ): array {
         $qb = $this->createQueryBuilder('c')
             ->andWhere('c.deletedAt IS NULL')
-            ->orderBy('c.name', \SortDirection::Ascending);
+            ->orderBy('c.name', 'ASC');
 
         if (null !== $term && '' !== trim($term)) {
             $qb->andWhere('LOWER(c.name) LIKE :term OR LOWER(c.code) LIKE :term')
@@ -71,7 +71,7 @@ class ClientRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('c')
             ->where('c.isActive = true')
             ->andWhere('c.deletedAt IS NULL')
-            ->orderBy('c.name', \SortDirection::Ascending)
+            ->orderBy('c.name', 'ASC')
             ->getQuery()
             ->getResult();
     }

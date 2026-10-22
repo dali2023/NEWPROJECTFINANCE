@@ -1,0 +1,58 @@
+{% if form.vars.errors|length > 0 %}
+    <div class="alert alert--error" role="alert">{{ form_errors(form) }}</div>
+{% endif %}
+
+<section class="card">
+    <div class="card__header"><div class="card__title">Identification</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.title) }}
+            {{ form_row(form.contractType) }}
+            {{ form_row(form.client) }}
+            {{ form_row(form.project) }}
+            {{ form_row(form.marketReference) }}
+            {{ form_row(form.responsible) }}
+            {{ form_row(form.status) }}
+        </div>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1rem;">
+    <div class="card__header"><div class="card__title">Calendrier et renouvellement</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.signatureDate) }}
+            {{ form_row(form.effectiveStartDate) }}
+            {{ form_row(form.executionStartDate) }}
+            {{ form_row(form.effectiveEndDate) }}
+            {{ form_row(form.noticePeriodDays) }}
+            {{ form_row(form.renewalMode) }}
+        </div>
+        <div class="help">
+            La date de préparation au renouvellement est calculée automatiquement :
+            fin contractuelle − préavis. Aucun renouvellement n’est automatique.
+        </div>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1rem;">
+    <div class="card__header"><div class="card__title">Montants et conditions</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.amountHt) }}
+            {{ form_row(form.vatRate) }}
+            {{ form_row(form.currencyCode) }}
+            {{ form_row(form.warrantyDurationDays) }}
+            {{ form_row(form.paymentTerms) }}
+        </div>
+        <div class="help">La TVA et le TTC sont recalculés au millime près, sans flottant binaire.</div>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1rem;">
+    <div class="card__header"><div class="card__title">Clauses et observations</div></div>
+    <div class="card__body">
+        {{ form_row(form.renewalTerms) }}
+        {{ form_row(form.notes) }}
+    </div>
+</section>

@@ -31,7 +31,7 @@ class SupplierRepository extends ServiceEntityRepository
     ): array {
         $qb = $this->createQueryBuilder('s')
             ->andWhere('s.deletedAt IS NULL')
-            ->orderBy('s.name', \SortDirection::Ascending);
+            ->orderBy('s.name', 'ASC');
 
         if (null !== $term && '' !== trim($term)) {
             $qb->andWhere('LOWER(s.name) LIKE :term OR LOWER(s.code) LIKE :term')
@@ -65,7 +65,7 @@ class SupplierRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('s')
             ->where('s.isActive = true')
             ->andWhere('s.deletedAt IS NULL')
-            ->orderBy('s.name', \SortDirection::Ascending)
+            ->orderBy('s.name', 'ASC')
             ->getQuery()
             ->getResult();
     }

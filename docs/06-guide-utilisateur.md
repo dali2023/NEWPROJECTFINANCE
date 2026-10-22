@@ -1,7 +1,7 @@
 # Guide d'utilisation
 
 **Application :** ONE ERP Finance & Project Control  
-**Version :** 1.0 — phases 1 et 2  
+**Version :** 1.1 — socle, module 15 et finances  
 **Public :** administrateurs, direction, responsables financiers, commerciaux et
 chefs de projet
 
@@ -30,8 +30,9 @@ Le bandeau latéral regroupe :
 
 - **Pilotage** : tableau de bord.
 - **Projets et tiers** : projets, clients, fournisseurs.
-- **Finance — phases 3 à 5** : facturation, charges, trésorerie, associés.
-  Ces entrées sont affichées en « à venir » et ne sont pas cliquables.
+- **Contrats** : registre des contrats, calendrier, facturation à réaliser,
+  notifications.
+- **Finance** : factures, charges, trésorerie, associés.
 - **Administration** : exercices, types de projet, utilisateurs, rôles, audit,
   selon vos permissions.
 
@@ -49,8 +50,8 @@ Le tableau de bord présente :
 - les prochaines échéances et les tiers actifs.
 
 Les indicateurs de facturation, d'encaissement, de charges et de trésorerie
-seront activés avec les phases suivantes. Ils ne sont pas affichés à zéro pour
-éviter toute interprétation erronée.
+reposent sur les données des modules livrés. Les indicateurs de résultat,
+distribution et reporting restent à activer avec les phases suivantes.
 
 ## 4. Gérer les clients
 
@@ -133,18 +134,112 @@ Les onglets disponibles :
 - **Synthèse** : informations générales, client, responsable, montants,
   budget et alerte sur l'écart éventuel avec l'échéancier.
 - **Contrat et échéancier** : références, dates, conditions et jalons.
-- **Budget et rentabilité** : budget prévisionnel, consommation et indicateurs
-  de marge (activés avec les modules financiers).
-- **Facturation**, **Charges** et **Documents** : emplacements réservés aux
-  phases 3 et 4, affichés explicitement comme « à venir ».
+- **Budget et rentabilité** : budget prévisionnel, consommation, facturation,
+  charges et indicateurs de marge issus des modules financiers.
+- **Facturation**, **Charges** et **Documents** : opérations rattachées au
+  projet, selon vos permissions.
 - **Historique** : opérations journalisées sur le projet.
 
 Les actions **Modifier** et **Clôturer** dépendent de vos permissions et du
 statut du projet. Un projet clôturé n'est plus modifiable.
 
-## 7. Administrer
+## 7. Contrats, facturation, charges, trésorerie et associés
 
-### 7.1. Exercices financiers
+### 7.1. Registre et fiche contrat
+
+Menu **Contrats** : la liste présente la référence, le client, le projet, la
+période, le montant, le statut et le reste à facturer. Utilisez la recherche et
+les filtres, puis ouvrez la fiche.
+
+La fiche contient neuf onglets :
+
+| Onglet | Contenu |
+|---|---|
+| Synthèse | Parties, dates, montants, statut et indicateurs |
+| Conditions | Mode de renouvellement, préavis, conditions particulières |
+| Maintenance | Contrats de maintenance et génération des échéances |
+| Échéances | Jalons contractuels, statut de réalisation et de facturation |
+| Réceptions et réserves | Réceptions provisoires/définitives et réserves |
+| Renouvellements | Décisions et contrats issus du renouvellement |
+| Retenues de garantie | Montants, éligibilité et libérations |
+| Documents | Dépôt et téléchargement des justificatifs |
+| Historique | Opérations tracées sur le contrat |
+
+Les boutons **Modifier**, **Renouveler**, **Alertes** et les actions d'onglet
+sont affichés selon vos permissions et le statut du contrat.
+
+### 7.2. Échéances et facturation
+
+Une échéance possède deux statuts distincts :
+
+- **réalisation** : à venir, échéance atteinte, réalisée, suspendue, annulée ;
+- **facturation** : non facturable, à vérifier, prête à facturer, facture émise,
+  partiellement facturée, facturée intégralement, bloquée.
+
+Une échéance ne devient **facturée** qu'après validation de la facture. Le menu
+**Contrats → Facturation à réaliser** regroupe les échéances prêtes, en retard et
+bloquées. Le bouton de création de facture n'est proposé que pour une échéance
+prête ou partiellement facturée.
+
+### 7.3. Maintenance, réceptions et renouvellement
+
+- **Maintenance** : créer un contrat de maintenance avec sa périodicité, ses
+  dates et son montant. L'action **Générer les échéances** produit les périodes
+  manquantes ; une seconde exécution ne crée pas de doublon.
+- **Réceptions** : enregistrer la date prévue, la date effective, le PV et le
+  statut. Une réception définitive doit être validée par un utilisateur habilité.
+- **Réserves** : ajouter une réserve à une réception, lui affecter un
+  responsable et une date de levée, puis la lever individuellement. Le statut
+  global passe à « partiellement levées » ou « levées ».
+- **Renouvellement** : aucune reconduction n'est automatique. Une décision
+  **Acceptée** crée un nouveau contrat, relie les deux fiches et clôt le contrat
+  arrivé à échéance. La décision et ses dates sont historisées.
+- **Retenues** : enregistrer le montant et la date d'éligibilité, puis libérer
+  tout ou partie. Le reste à libérer est recalculé.
+
+### 7.4. Calendrier et alertes
+
+Menu **Contrats → Calendrier** : échéances contractuelles, expirations,
+réceptions, fins de garantie et renouvellements sur un horizon configurable.
+
+Menu **Contrats → Notifications** : alertes générées selon les délais
+paramétrés. Une alerte peut être prise en charge, résolue ou classée sans objet.
+La génération est idempotente : relancer l'action ne crée pas de doublon. Voir
+[`08-parametrage-alertes.md`](08-parametrage-alertes.md).
+
+### 7.5. Factures
+
+Menu **Factures** :
+
+1. **Nouvelle facture** : client, projet/contrat, dates, lignes et taux de TVA.
+2. **Valider** : la facture devient non modifiable ; si elle provient d'une
+   échéance, la référence et le montant sont reportés sur celle-ci.
+3. **Envoyer** : marque la facture comme envoyée.
+4. **Régler** : saisir le montant, la date, le moyen et éventuellement le compte
+   de trésorerie. Un encaissement partiel met la facture à « partiellement
+   réglée ».
+5. **Annuler** : réservé aux brouillons. Une facture validée doit être corrigée
+   par un avoir.
+
+Une facture brouillon ou annulée ne peut pas être encaissée.
+
+### 7.6. Charges, trésorerie et associés
+
+- **Charges** : créer une dépense, la soumettre, puis l'approuver avec un autre
+  utilisateur. L'auteur ne peut jamais approuver sa propre dépense. Le paiement
+  n'est possible qu'après approbation ; chaque paiement met à jour le cumul payé
+  et le solde dû, et crée un décaissement de trésorerie.
+- **Trésorerie** : gérer les comptes bancaires et caisses, consulter les
+  mouvements et rapprocher un mouvement. Le solde est calculé à partir du solde
+  d'ouverture et des mouvements, jamais saisi à la main.
+- **Associés** : créer une fiche, enregistrer un apport, un remboursement ou un
+  dividende, valider l'opération, puis la régler. Une opération non validée ne
+  peut pas être réglée ; le règlement crée le mouvement de trésorerie
+  correspondant.
+
+## 8. Administrer
+
+### 8.1. Exercices financiers
 
 Menu **Administration → Exercices**.
 
@@ -154,12 +249,12 @@ Menu **Administration → Exercices**.
 - **Réouvrir** un exercice clôturé : permission dédiée et motif d'au moins
   10 caractères obligatoires. L'opération est journalisée.
 
-### 7.2. Types de projet
+### 8.2. Types de projet
 
 Créer, renommer, ordonner ou désactiver les types proposés dans les fiches
 projet. Un type utilisé par un projet existant ne doit pas être supprimé.
 
-### 7.3. Utilisateurs
+### 8.3. Utilisateurs
 
 Menu **Administration → Utilisateurs**.
 
@@ -170,7 +265,7 @@ Menu **Administration → Utilisateurs**.
 
 Le mot de passe doit contenir au moins 8 caractères. Il n'est jamais affiché.
 
-### 7.4. Rôles et permissions
+### 8.4. Rôles et permissions
 
 Menu **Administration → Rôles**. La matrice présente les permissions par module.
 Cocher ou décocher puis **Enregistrer les permissions**. Toute modification est
@@ -180,7 +275,7 @@ L'administrateur technique dispose d'un accès global, mais les règles de
 séparation des tâches restent appliquées : il ne peut pas, par défaut, valider
 les opérations financières à la place des responsables.
 
-### 7.5. Journal d'audit
+### 8.5. Journal d'audit
 
 Menu **Administration → Audit**. Filtrez par utilisateur, action, entité,
 module, résultat ou période. Chaque ligne indique l'auteur, l'action,
@@ -188,16 +283,20 @@ l'horodatage, l'adresse IP et, le cas échéant, les valeurs avant/après.
 
 Les refus d'accès apparaissent avec l'action `deny` et le résultat `denied`.
 
-## 8. Bonnes pratiques
+## 9. Bonnes pratiques
 
 - Vérifier le client et le type avant de créer un projet.
 - Ne pas utiliser le champ « commentaires » pour des données sensibles : le
   journal d'audit et les commentaires sont visibles selon les permissions.
 - Clôturer un projet dès la fin des prestations.
+- Vérifier les échéances contractuelles dans le calendrier avant la fin du
+  préavis de renouvellement.
+- Ne jamais valider une facture ou une charge sans contrôle des pièces
+  justificatives et du montant TTC.
 - Clôturer l'exercice après validation des opérations de l'année.
 - Signaler immédiatement toute anomalie de montant ou d'accès.
 
-## 9. Montants et arrondis
+## 10. Montants et arrondis
 
 - Les montants sont stockés en décimal exact (échelle 3, soit le millime).
 - Le taux de TVA est saisi en pourcentage (ex. `19`).
@@ -207,7 +306,7 @@ Les refus d'accès apparaissent avec l'action `deny` et le résultat `denied`.
 En cas d'écart apparent, vérifier la saisie du taux et des montants HT avant de
 contacter le support.
 
-## 10. Problèmes fréquents
+## 11. Problèmes fréquents
 
 | Symptôme | Cause probable | Action |
 |---|---|---|
@@ -217,8 +316,12 @@ contacter le support.
 | « Jeton CSRF invalide » | Page restée ouverte trop longtemps | Recharger la page et recommencer |
 | Exercice non modifiable | Exercice clôturé | Demander une réouverture motivée |
 | Projet non visible | Hors périmètre `project.view_own` | Demander à être ajouté comme membre |
+| Bouton « Facturer » absent | Échéance non prête ou non facturable | Vérifier les statuts de réalisation et de facturation |
+| Paiement de charge refusé | Charge non approuvée ou auteur = approbateur | Faire approuver par un autre utilisateur |
+| Règlement d'associé refusé | Opération non validée | Valider l'opération avant le règlement |
+| Aucune alerte générée | Dates ou responsable absents, ou délai non atteint | Compléter la fiche et vérifier le paramétrage |
 
-## 11. Support
+## 12. Support
 
 Fournir au support : l'identifiant utilisé, l'écran concerné, l'heure, le
 message exact et, si possible, la référence du projet ou du client. Les

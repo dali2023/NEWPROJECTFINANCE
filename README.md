@@ -7,10 +7,11 @@ v1.0 du 21/10/2026.
 > Outil de gestion et d'aide à la décision. Il ne remplace ni la comptabilité
 > générale officielle ni les déclarations fiscales.
 
-**Périmètre livré : phases 1 et 2** — sécurité et administration, référentiels
-(clients, fournisseurs, types de projet), projets, contrats, budgets et jalons.
-Les modules de facturation, charges, trésorerie, associés et reporting sont
-annoncés dans l'interface comme « à venir » et seront livrés aux phases 3 à 6.
+**Périmètre livré :** socle et sécurité, référentiels (clients, fournisseurs,
+types de projet), projets, module 15 (contrats, maintenance, réceptions,
+renouvellements, retenues, calendrier et alertes), facturation, charges,
+trésorerie et associés. Les modules de répartition indirecte, immobilisations,
+résultat annuel, distribution et reporting sont annoncés comme « à venir ».
 
 ## Pile technique
 
@@ -68,11 +69,12 @@ Comptes de démonstration créés par `app:demo:seed` (mot de passe `Demo1234!`)
 | `commercial` | Responsable commercial |
 | `chefprojet` | Chef de projet |
 
-Le jeu de démonstration comprend 41 permissions, 5 rôles, 5 utilisateurs,
+Le jeu de démonstration comprend 48 permissions, 5 rôles, 5 utilisateurs,
 5 types de projet, les exercices 2025 (clôturé) et 2026 (ouvert), 4 clients,
-3 fournisseurs, 5 projets et leurs jalons. La commande est idempotente ;
-`--reset` réinitialise les données de démonstration et `--password` change le
-mot de passe initial.
+3 fournisseurs, 5 projets et leurs jalons, 3 contrats avec leurs échéances,
+2 contrats de maintenance, des factures, charges, comptes bancaires et
+opérations d'associés. La commande est idempotente ; `--reset` réinitialise
+les données de démonstration et `--password` change le mot de passe initial.
 
 ## Tests
 
@@ -85,7 +87,7 @@ docker compose exec -u application php php bin/phpunit tests/Service/MoneyTest.p
 docker compose exec -u application php php bin/phpunit --filter testIndirectAllocation
 ```
 
-Résultat attendu : **OK (23 tests, 98 assertions)**.
+Résultat attendu : **OK (41 tests, 189 assertions)**.
 
 Les tests fonctionnels s'exécutent dans une transaction PostgreSQL annulée à la
 fin de chaque test : la base de test reste propre entre deux exécutions. Après
@@ -162,10 +164,11 @@ docker compose restart nginx
 | [`docs/AVANCEMENT.md`](docs/AVANCEMENT.md) | État d'avancement, décisions techniques, limites, feuille de route |
 | [`docs/02-modele-donnees.md`](docs/02-modele-donnees.md) | Modèle de données et règles de gestion |
 | [`docs/03-matrice-permissions.md`](docs/03-matrice-permissions.md) | Rôles, permissions et séparation des tâches |
-| [`docs/04-recette.md`](docs/04-recette.md) | Recette REC-001 à REC-020 et tests financiers A à F |
+| [`docs/04-recette.md`](docs/04-recette.md) | Recette REC-001 à REC-036 et tests financiers A à F |
 | [`docs/05-documentation-technique.md`](docs/05-documentation-technique.md) | Architecture, calcul exact, sécurité, tests et points d'extension |
 | [`docs/06-guide-utilisateur.md`](docs/06-guide-utilisateur.md) | Guide utilisateur par profil |
 | [`docs/07-sauvegarde-restauration.md`](docs/07-sauvegarde-restauration.md) | Sauvegarde, restauration, RPO/RTO et test de reprise |
+| [`docs/08-parametrage-alertes.md`](docs/08-parametrage-alertes.md) | Délais, destinataires et idempotence des alertes contractuelles |
 
 ## Sécurité
 
@@ -180,12 +183,16 @@ docker compose restart nginx
 
 ## Limites connues
 
-1. Facturation, encaissements, charges, trésorerie, associés et résultat annuel
-   non développés (phases 3 à 5).
-2. Exports PDF/XLSX non livrés (phase 6).
-3. Aucun courriel métier envoyé ; Mailpit sert uniquement au développement.
-4. La procédure de sauvegarde est documentée et testable manuellement ; sa
+1. Répartition indirecte, immobilisations, résultat annuel, distribution et
+   reporting/export non livrés.
+2. Exports PDF/XLSX non livrés.
+3. Aucun courriel métier envoyé ; les alertes contractuelles restent internes à
+   l'application, Mailpit servant uniquement au développement.
+4. Imputation d'un encaissement sur plusieurs factures, transferts internes de
+   trésorerie et charges récurrentes non encore exposés.
+5. Le garde-fou « exercice clôturé » est vérifié sur l'administration des
+   exercices ; son application à chaque écriture financière reste à généraliser.
+6. La procédure de sauvegarde est documentée et testable manuellement ; sa
    planification relève de l'infrastructure.
-5. Les scénarios de recette dépendant des modules financiers sont marqués
-   « non applicables » dans `docs/04-recette.md` et ne sont pas déclarés
-   conformes par défaut.
+7. Les scénarios partiels ou en attente sont signalés dans
+   `docs/04-recette.md` et ne sont pas déclarés conformes par défaut.

@@ -26,8 +26,8 @@ class ProjectMilestoneRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('m')
             ->where('m.project = :project')
             ->setParameter('project', $project)
-            ->orderBy('m.position', \SortDirection::Ascending)
-            ->addOrderBy('m.plannedDate', \SortDirection::Ascending)
+            ->orderBy('m.position', 'ASC')
+            ->addOrderBy('m.plannedDate', 'ASC')
             ->getQuery()
             ->getResult();
     }
@@ -48,7 +48,7 @@ class ProjectMilestoneRepository extends ServiceEntityRepository
             ->andWhere('p.deletedAt IS NULL')
             ->setParameter('from', $from)
             ->setParameter('statuses', [MilestoneStatus::Planned->value, MilestoneStatus::Reached->value, MilestoneStatus::Invoiced->value])
-            ->orderBy('m.plannedDate', \SortDirection::Ascending)
+            ->orderBy('m.plannedDate', 'ASC')
             ->setMaxResults($limit);
 
         if (null !== $to) {

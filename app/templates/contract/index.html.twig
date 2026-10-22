@@ -1,0 +1,158 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contrats{% endblock %}
+{% block breadcrumb %}Contrats / Registre{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Registre des contrats</h1>
+            <div class="page-head__subtitle">
+                {{ result.total }} contrat{{ result.total > 1 ? 's' : '' }}
+                {% if scope_limited %}— restreint aux contrats dont vous êtes responsable{% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            <a class="btn" href="{{ path('app_contract_calendar_index') }}">Calendrier</a>
+            <a class="btn" href="{{ path('app_contract_billing_index') }}">Facturation à réaliser</a>
+            {% if can('contract.notify') %}
+                <a class="btn" href="{{ path('app_contract_notification_index') }}">Notifications</a>
+            {% endif %}
+            {% if can('contract.manage') %}
+                <a class="btn btn--primary" href="{{ path('app_contract_new') }}">Nouveau contrat</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid--stats" style="margin-bottom:1rem;">
+        <div class="card stat">
+            <div class="stat__label">Contrats au registre</div>
+            <div class="stat__value">{{ total }}</div>
+            <div class="stat__hint">Tous statuts, hors contrats supprimés</div>
+        </div>
+        <div class="card stat">
+            <div class="stat__label">Expirent sous 30 jours</div>
+            <div class="stat__value">{{ expiring_30 }}</div>
+            <div class="stat__hint">Action de renouvellement à préparer</div>
+        </div>
+        <div class="card stat stat--muted">
+            <div class="stat__label">Renouvellements à préparer</div>
+            <div class="stat__value">{{ renewals_to_prepare }}</div>
+            <div class="stat__hint">Préavis contractuel atteint</div>
+        </div>
+        <div class="card stat">
+            <div class="stat__label">Contrats en cours</div>
+            <div class="stat__value">{{ status_counts.in_progress + status_counts.active_maintenance + status_counts.warranty }}</div>
+            <div class="stat__hint">Exécution, maintenance et garantie</div>
+        </div>
+    </div>
+
+    <section class="card">
+        <form method="get" action="{{ path('app_contract_index') }}" class="toolbar">
+            <div class="field">
+                <label for="q">Recherche</label>
+                <input type="text" id="q" name="q" value="{{ filters.term }}" placeholder="Référence, intitulé, marché">
+            </div>
+            <div class="field">
+                <label for="statut">Statut</label>
+                <select id="statut" name="statut" data-auto-submit>
+                    <option value="">Tous les statuts</option>
+                    {% for status in statuses %}
+                        <option value="{{ status.value }}" {{ filters.status and filters.status == status ? 'selected' }}>{{ status.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="type">Type</label>
+                <select id="type" name="type" data-auto-submit>
+                    <option value="">Tous les types</option>
+                    {% for type in types %}
+                        <option value="{{ type.value }}" {{ filters.type and filters.type == type ? 'selected' }}>{{ type.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="client">Client</label>
+                <select id="client" name="client" data-auto-submit>
+                    <option value="">Tous les clients</option>
+                    {% for client in clients %}
+                        <option value="{{ client.idString }}" {{ filters.client and filters.client.idString == client.idString ? 'selected' }}>{{ client.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="echeance">Échéance</label>
+                <select id="echeance" name="echeance" data-auto-submit>
+                    <option value="">Toutes les dates</option>
+                    <option value="30" {{ filters.expiryWithin == 30 ? 'selected' }}>Sous 30 jours</option>
+                    <option value="60" {{ filters.expiryWithin == 60 ? 'selected' }}>Sous 60 jours</option>
+                    <option value="90" {{ filters.expiryWithin == 90 ? 'selected' }}>Sous 90 jours</option>
+                    <option value="180" {{ filters.expiryWithin == 180 ? 'selected' }}>Sous 180 jours</option>
+                </select>
+            </div>
+            {% if not scope_limited %}
+                <div class="field">
+                    <label for="responsable">Responsable</label>
+                    <select id="responsable" name="responsable" data-auto-submit>
+                        <option value="">Tous</option>
+                        {% for responsable in responsibles %}
+                            <option value="{{ responsable.idString }}" {{ filters.responsible and filters.responsible.idString == responsable.idString ? 'selected' }}>{{ responsable.fullName }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endif %}
+            <button class="btn" type="submit">Filtrer</button>
+            {% if filters.term or filters.status or filters.type or filters.client or filters.responsible or filters.expiryWithin %}
+                <a class="btn btn--ghost" href="{{ path('app_contract_index') }}">Réinitialiser</a>
+            {% endif %}
+        </form>
+
+        {% if result.items is empty %}
+            <div class="empty">
+                Aucun contrat ne correspond à ces critères.
+                {% if can('contract.manage') %}
+                    <br><a href="{{ path('app_contract_new') }}">Créer un contrat</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Référence</th>
+                        <th>Intitulé</th>
+                        <th>Client</th>
+                        <th>Type</th>
+                        <th>Fin contractuelle</th>
+                        <th>Préparation renouvellement</th>
+                        <th>Statut</th>
+                        <th class="num">Montant HT</th>
+                        <th class="actions"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for contract in result.items %}
+                        <tr>
+                            <td><a class="mono" href="{{ path('app_contract_show', {id: contract.idString}) }}">{{ contract.reference }}</a></td>
+                            <td>
+                                <div class="cell-main">{{ contract.title }}</div>
+                                {% if contract.project %}<div class="cell-sub mono">{{ contract.project.code }}</div>{% endif %}
+                            </td>
+                            <td>{{ contract.client ? contract.client.name : '—' }}</td>
+                            <td>{{ contract.contractType.label }}</td>
+                            <td class="num">{{ contract.effectiveEndDate ? contract.effectiveEndDate|date('d/m/Y') : '—' }}</td>
+                            <td class="num">{{ contract.renewalPreparationDate ? contract.renewalPreparationDate|date('d/m/Y') : '—' }}</td>
+                            <td><span class="badge {{ contract.status.badgeClass }}">{{ contract.status.label }}</span></td>
+                            <td class="num">{{ contract.amountHt|money(contract.currencyCode) }}</td>
+                            <td class="actions">
+                                <a class="btn btn--ghost btn--sm" href="{{ path('app_contract_show', {id: contract.idString}) }}">Ouvrir</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ invoice.number }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_invoice_index') }}">Facturation</a> / {{ invoice.number }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ invoice.number }} <span class="badge {{ invoice.status.badgeClass }}">{{ invoice.status.label }}</span></h1>
+            <div class="page-head__subtitle">
+                {{ invoice.invoiceType.label }} · {{ invoice.client ? invoice.client.name : '—' }}
+                {% if invoice.project %} · <span class="mono">{{ invoice.project.code }}</span>{% endif %}
+                {% if invoice.contract %} · <a class="mono" href="{{ path('app_contract_show', {id: invoice.contract.idString}) }}">{{ invoice.contract.reference }}</a>{% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            {% if invoice.status.editable and can('invoice.manage') %}
+                <a class="btn" href="{{ path('app_invoice_edit', {id: invoice.idString}) }}">Modifier</a>
+            {% endif %}
+            {% if invoice.status.value == 'draft' and can('invoice.manage') %}
+                <form method="post" action="{{ path('app_invoice_validate', {id: invoice.idString}) }}" class="inline-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('invoice_validate_' ~ invoice.idString) }}">
+                    <button class="btn btn--primary" type="submit">Valider la facture</button>
+                </form>
+            {% endif %}
+            {% if invoice.status.value in ['validated', 'partially_paid'] and can('invoice.manage') %}
+                <form method="post" action="{{ path('app_invoice_send', {id: invoice.idString}) }}" class="inline-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('invoice_send_' ~ invoice.idString) }}">
+                    <button class="btn" type="submit">Marquer envoyée</button>
+                </form>
+            {% endif %}
+            {% if invoice.status.value == 'draft' and can('invoice.cancel') %}
+                <details>
+                    <summary class="btn btn--ghost">Annuler</summary>
+                    <form method="post" action="{{ path('app_invoice_cancel', {id: invoice.idString}) }}" style="display:grid; gap:.35rem; margin-top:.35rem;">
+                        <input type="hidden" name="_token" value="{{ csrf_token('invoice_cancel_' ~ invoice.idString) }}">
+                        <input class="input" type="text" name="reason" placeholder="Motif d’annulation" required>
+                        <button class="btn btn--danger btn--sm" type="submit">Confirmer</button>
+                    </form>
+                </details>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid--stats" style="margin-bottom:1rem;">
+        <div class="card stat"><div class="stat__label">Montant TTC</div><div class="stat__value">{{ invoice.amountTtc|money(invoice.currencyCode) }}</div><div class="stat__hint">HT {{ invoice.amountHt|money(invoice.currencyCode) }} · TVA {{ invoice.vatAmount|money(invoice.currencyCode) }}</div></div>
+        <div class="card stat"><div class="stat__label">Réglé</div><div class="stat__value">{{ invoice.paidAmount|money(invoice.currencyCode) }}</div><div class="stat__hint">Solde : {{ invoice.balance|money(invoice.currencyCode) }}</div></div>
+        <div class="card stat {{ invoice.overdue ? 'stat--muted' : '' }}"><div class="stat__label">Échéance</div><div class="stat__value">{{ invoice.dueDate|date('d/m/Y') }}</div><div class="stat__hint">{{ invoice.overdue ? 'En retard' : 'Dans les délais' }}</div></div>
+    </div>
+
+    <div class="grid grid--2">
+        <section class="card">
+            <div class="card__header"><div class="card__title">Informations</div></div>
+            <div class="card__body">
+                <dl class="definition">
+                    <dt>Client</dt><dd>{{ invoice.client ? invoice.client.name : '—' }}</dd>
+                    <dt>Projet</dt><dd>{{ invoice.project ? invoice.project.code ~ ' — ' ~ invoice.project.name : '—' }}</dd>
+                    <dt>Contrat</dt><dd>{% if invoice.contract %}<a class="mono" href="{{ path('app_contract_show', {id: invoice.contract.idString}) }}">{{ invoice.contract.reference }}</a>{% else %}—{% endif %}</dd>
+                    <dt>Échéance contractuelle</dt><dd>{% if invoice.contractMilestone %}<a class="mono" href="{{ path('app_contract_show', {id: invoice.contract.idString, onglet: 'echeances'}) }}">{{ invoice.contractMilestone.reference }}</a>{% else %}—{% endif %}</dd>
+                    <dt>Date d’émission</dt><dd>{{ invoice.issueDate|date('d/m/Y') }}</dd>
+                    <dt>Validée par</dt><dd>{{ invoice.validatedBy ? invoice.validatedBy.fullName : '—' }}{% if invoice.validatedAt %} le {{ invoice.validatedAt|date('d/m/Y H:i') }}{% endif %}</dd>
+                </dl>
+                {% if invoice.notes %}<div class="divider"></div><p style="white-space:pre-line;">{{ invoice.notes }}</p>{% endif %}
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Règlements</div></div>
+            {% if invoice.payments is empty %}
+                <div class="empty">Aucun règlement enregistré.</div>
+            {% else %}
+                <div class="table-wrap"><table class="table table--compact"><thead><tr><th>Référence</th><th>Date</th><th>Moyen</th><th class="num">Montant</th><th>Compte</th></tr></thead><tbody>
+                {% for payment in invoice.payments %}<tr><td class="mono">{{ payment.reference }}</td><td>{{ payment.paymentDate|date('d/m/Y') }}</td><td>{{ payment.method.label }}</td><td class="num">{{ payment.amount|money(invoice.currencyCode) }}</td><td>{{ payment.bankAccount ? payment.bankAccount.name : '—' }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            {% endif %}
+
+            {% if invoice.balance > 0 and invoice.status.value != 'draft' and invoice.status.value != 'cancelled' and can('receipt.manage') %}
+                <div class="card__body">
+                    <div class="section-title">Encaisser un règlement</div>
+                    <form method="post" action="{{ path('app_invoice_payment', {id: invoice.idString}) }}" class="form-grid">
+                        <input type="hidden" name="_token" value="{{ csrf_token('invoice_payment_' ~ invoice.idString) }}">
+                        <div class="field"><label for="amount">Montant</label><input id="amount" class="input" type="text" name="amount" value="{{ invoice.balance }}" data-money required></div>
+                        <div class="field"><label for="date">Date</label><input id="date" class="input" type="date" name="date" value="{{ 'now'|date('Y-m-d') }}" required></div>
+                        <div class="field"><label for="method">Moyen</label><select id="method" name="method">{% for method in methods %}<option value="{{ method.value }}">{{ method.label }}</option>{% endfor %}</select></div>
+                        <div class="field"><label for="account">Compte de trésorerie</label><select id="account" name="account"><option value="">Aucun mouvement de trésorerie</option>{% for account in accounts %}<option value="{{ account.idString }}">{{ account.name }}</option>{% endfor %}</select></div>
+                        <div class="field"><label for="bank_reference">Référence bancaire</label><input id="bank_reference" class="input" type="text" name="bank_reference"></div>
+                        <div class="field"><label for="notes">Note</label><input id="notes" class="input" type="text" name="notes"></div>
+                        <div class="field form-actions"><button class="btn btn--primary" type="submit">Enregistrer le règlement</button></div>
+                    </form>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+
+    <section class="card" style="margin-top:1rem;">
+        <div class="card__header"><div class="card__title">Lignes de facture</div></div>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Désignation</th><th class="num">Quantité</th><th class="num">PU HT</th><th class="num">TVA</th><th class="num">HT</th><th class="num">TVA</th><th class="num">TTC</th></tr></thead><tbody>
+        {% for line in invoice.lines %}<tr><td>{{ line.designation }}</td><td class="num">{{ line.quantity }}</td><td class="num">{{ line.unitPriceHt|money(invoice.currencyCode) }}</td><td class="num">{{ line.vatRate|money_rate }}</td><td class="num">{{ line.amountHt|money(invoice.currencyCode) }}</td><td class="num">{{ line.vatAmount|money(invoice.currencyCode) }}</td><td class="num">{{ line.amountTtc|money(invoice.currencyCode) }}</td></tr>{% endfor %}
+        </tbody><tfoot><tr><th colspan="4" style="text-align:right;">Total</th><th class="num">{{ invoice.amountHt|money(invoice.currencyCode) }}</th><th class="num">{{ invoice.vatAmount|money(invoice.currencyCode) }}</th><th class="num">{{ invoice.amountTtc|money(invoice.currencyCode) }}</th></tr></tfoot></table></div>
+    </section>
+{% endblock %}

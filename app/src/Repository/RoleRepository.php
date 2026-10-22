@@ -22,7 +22,7 @@ class RoleRepository extends ServiceEntityRepository
     public function findAllOrdered(): array
     {
         return $this->createQueryBuilder('r')
-            ->orderBy('r.label', \SortDirection::Ascending)
+            ->orderBy('r.label', 'ASC')
             ->getQuery()
             ->getResult();
     }

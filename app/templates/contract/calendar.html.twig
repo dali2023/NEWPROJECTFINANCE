@@ -1,0 +1,66 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Calendrier des contrats{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / Calendrier{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Calendrier contractuel</h1>
+            <div class="page-head__subtitle">Échéances des {{ horizon }} prochains mois — renouvellements, réceptions, garanties et retenues</div>
+        </div>
+        <div class="page-head__actions">
+            <a class="btn" href="{{ path('app_contract_billing_index') }}">Facturation à réaliser</a>
+            <a class="btn" href="{{ path('app_contract_index') }}">Registre</a>
+        </div>
+    </div>
+
+    <section class="card">
+        <form method="get" action="{{ path('app_contract_calendar_index') }}" class="toolbar">
+            <div class="field">
+                <label for="type">Type d’échéance</label>
+                <select id="type" name="type" data-auto-submit>
+                    {% for value, label in event_types %}
+                        <option value="{{ value }}" {{ type == value ? 'selected' }}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="horizon">Horizon</label>
+                <select id="horizon" name="horizon" data-auto-submit>
+                    {% for months in [3, 6, 12, 18, 24] %}
+                        <option value="{{ months }}" {{ horizon == months ? 'selected' }}>{{ months }} mois</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="btn" type="submit">Afficher</button>
+        </form>
+
+        {% if events is empty %}
+            <div class="empty">Aucune échéance sur la période sélectionnée.</div>
+        {% else %}
+            {% set current_month = null %}
+            <div class="calendar-list">
+                {% for event in events %}
+                    {% set month = event.date|date('Y-m') %}
+                    {% if month != current_month %}
+                        {% set current_month = month %}
+                        <div class="calendar-month">
+                            <h2>{{ event.date|date('F Y')|capitalize }}</h2>
+                        </div>
+                    {% endif %}
+                    <a class="calendar-event calendar-event--{{ event.type }}" href="{{ path('app_contract_show', {id: event.contract.idString}) }}">
+                        <span class="calendar-event__date">{{ event.date|date('d/m/Y') }}</span>
+                        <span class="calendar-event__label">{{ event.label }}</span>
+                        <span class="calendar-event__contract">
+                            <span class="mono">{{ event.contract.reference }}</span>
+                            · {{ event.contract.title }}
+                            {% if event.contract.client %} · {{ event.contract.client.name }}{% endif %}
+                        </span>
+                        <span class="badge {{ event.contract.status.badgeClass }}">{{ event.contract.status.label }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

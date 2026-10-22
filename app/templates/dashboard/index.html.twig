@@ -42,17 +42,42 @@
             <div class="stat__hint">Tous statuts confondus</div>
         </div>
 
-        <div class="card stat stat--muted">
-            <div class="stat__label">Facturation (phase 3)</div>
-            <div class="stat__value">Module à venir</div>
-            <div class="stat__hint">Chiffre d’affaires facturé non disponible</div>
-        </div>
+        {% if invoice_open_balance is not null %}
+            <div class="card stat">
+                <div class="stat__label">Créances clients (TTC)</div>
+                <div class="stat__value">{{ invoice_open_balance|money(app_currency) }}</div>
+                <div class="stat__hint">
+                    {% if invoice_overdue_balance is not null and invoice_overdue_balance != '0.000' %}
+                        Dont {{ invoice_overdue_balance|money(app_currency) }} en retard
+                    {% else %}
+                        Aucune facture échue impayée
+                    {% endif %}
+                    {% if expense_pending_total is not null and expense_pending_total != '0.000' %}
+                        — Charges à valider : {{ expense_pending_total|money(app_currency) }}
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="card stat stat--muted">
+                <div class="stat__label">Créances clients</div>
+                <div class="stat__value">Droits insuffisants</div>
+                <div class="stat__hint">Permission `invoice.view` requise</div>
+            </div>
+        {% endif %}
 
-        <div class="card stat stat--muted">
-            <div class="stat__label">Trésorerie (phase 4)</div>
-            <div class="stat__value">Module à venir</div>
-            <div class="stat__hint">Solde consolidé non disponible</div>
-        </div>
+        {% if treasury_balance is not null %}
+            <div class="card stat">
+                <div class="stat__label">Trésorerie consolidée</div>
+                <div class="stat__value">{{ treasury_balance|money(app_currency) }}</div>
+                <div class="stat__hint">Soldes d’ouverture et mouvements rapprochés</div>
+            </div>
+        {% else %}
+            <div class="card stat stat--muted">
+                <div class="stat__label">Trésorerie</div>
+                <div class="stat__value">Droits insuffisants</div>
+                <div class="stat__hint">Permission `treasury.view` requise</div>
+            </div>
+        {% endif %}
     </div>
 
     <div class="grid grid--sidebar">

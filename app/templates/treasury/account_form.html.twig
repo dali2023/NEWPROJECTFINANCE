@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ is_new ? 'Nouveau compte' : 'Modifier le compte' }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_treasury_index') }}">Trésorerie</a> / {{ is_new ? 'Nouveau compte' : 'Modifier' }}{% endblock %}
+
+{% block body %}
+    <div class="page-head"><div><h1>{{ is_new ? 'Nouveau compte de trésorerie' : 'Modifier le compte' }}</h1></div></div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}<div class="alert alert--error">{{ form_errors(form) }}</div>{% endif %}
+        <section class="card">
+            <div class="card__header"><div class="card__title">Identification</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.name) }}
+                    {{ form_row(form.bankName) }}
+                    {{ form_row(form.accountNumber) }}
+                    {{ form_row(form.iban) }}
+                    {{ form_row(form.currencyCode) }}
+                    {{ form_row(form.openingDate) }}
+                    {{ form_row(form.openingBalance) }}
+                </div>
+                {{ form_row(form.isActive) }}
+                {{ form_row(form.notes) }}
+                <div class="help">Le solde actuel est calculé à partir du solde d'ouverture et des mouvements ; il n'est jamais saisi directement.</div>
+            </div>
+        </section>
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer le compte</button>
+            <a class="btn btn--ghost" href="{{ is_new ? path('app_treasury_index') : path('app_treasury_account_show', {id: account.idString}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

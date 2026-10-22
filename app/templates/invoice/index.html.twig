@@ -1,0 +1,88 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Factures{% endblock %}
+{% block breadcrumb %}Finance / Facturation{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Facturation client</h1>
+            <div class="page-head__subtitle">{{ result.total }} facture{{ result.total > 1 ? 's' : '' }}</div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('invoice.manage') %}
+                <a class="btn btn--primary" href="{{ path('app_invoice_new') }}">Nouvelle facture</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid--stats" style="margin-bottom:1rem;">
+        <div class="card stat">
+            <div class="stat__label">Encours client</div>
+            <div class="stat__value">{{ open_balance|money(app_currency) }}</div>
+            <div class="stat__hint">Factures validées non totalement réglées</div>
+        </div>
+        <div class="card stat">
+            <div class="stat__label">Encours échu</div>
+            <div class="stat__value">{{ overdue_balance|money(app_currency) }}</div>
+            <div class="stat__hint">Échéance dépassée</div>
+        </div>
+    </div>
+
+    <section class="card">
+        <form method="get" action="{{ path('app_invoice_index') }}" class="toolbar">
+            <div class="field"><label for="q">Recherche</label><input id="q" name="q" value="{{ filters.term }}" placeholder="Numéro, client, observation"></div>
+            <div class="field">
+                <label for="client">Client</label>
+                <select id="client" name="client" data-auto-submit>
+                    <option value="">Tous les clients</option>
+                    {% for client in clients %}<option value="{{ client.idString }}" {{ filters.client and filters.client.idString == client.idString ? 'selected' }}>{{ client.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="statut">Statut</label>
+                <select id="statut" name="statut" data-auto-submit>
+                    <option value="">Tous les statuts</option>
+                    {% for status in statuses %}<option value="{{ status.value }}" {{ filters.status and filters.status == status ? 'selected' }}>{{ status.label }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="type">Nature</label>
+                <select id="type" name="type" data-auto-submit>
+                    <option value="">Toutes</option>
+                    {% for type in types %}<option value="{{ type.value }}" {{ filters.type and filters.type == type ? 'selected' }}>{{ type.label }}</option>{% endfor %}
+                </select>
+            </div>
+            <label class="field field--checkbox"><input type="checkbox" name="retard" value="1" {{ filters.overdueOnly ? 'checked' }} data-auto-submit><span>En retard uniquement</span></label>
+            <button class="btn" type="submit">Filtrer</button>
+        </form>
+
+        {% if result.items is empty %}
+            <div class="empty">Aucune facture ne correspond aux critères.</div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Numéro</th><th>Client</th><th>Projet</th><th>Date</th><th>Échéance</th><th>Statut</th><th class="num">HT</th><th class="num">TVA</th><th class="num">TTC</th><th class="num">Solde</th><th class="actions"></th></tr></thead>
+                    <tbody>
+                    {% for invoice in result.items %}
+                        <tr>
+                            <td><a class="mono" href="{{ path('app_invoice_show', {id: invoice.idString}) }}">{{ invoice.number }}</a><div class="cell-sub">{{ invoice.invoiceType.label }}</div></td>
+                            <td>{{ invoice.client ? invoice.client.name : '—' }}</td>
+                            <td>{% if invoice.project %}<span class="mono">{{ invoice.project.code }}</span>{% else %}—{% endif %}</td>
+                            <td class="num">{{ invoice.issueDate|date('d/m/Y') }}</td>
+                            <td class="num">{{ invoice.dueDate|date('d/m/Y') }}{% if invoice.overdue %} <span class="badge badge--danger">Échu</span>{% endif %}</td>
+                            <td><span class="badge {{ invoice.status.badgeClass }}">{{ invoice.status.label }}</span></td>
+                            <td class="num">{{ invoice.amountHt|money(invoice.currencyCode) }}</td>
+                            <td class="num">{{ invoice.vatAmount|money(invoice.currencyCode) }}</td>
+                            <td class="num">{{ invoice.amountTtc|money(invoice.currencyCode) }}</td>
+                            <td class="num"><strong>{{ invoice.balance|money(invoice.currencyCode) }}</strong></td>
+                            <td class="actions"><a class="btn btn--ghost btn--sm" href="{{ path('app_invoice_show', {id: invoice.idString}) }}">Ouvrir</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

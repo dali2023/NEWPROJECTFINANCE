@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ milestone.idString ? 'Modifier l’échéance' : 'Nouvelle échéance' }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / <a href="{{ path('app_contract_show', {id: contract.idString, onglet: 'echeances'}) }}">{{ contract.reference }}</a> / Échéance{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ milestone.idString ? 'Modifier l’échéance' : 'Nouvelle échéance contractuelle' }}</h1>
+            <div class="page-head__subtitle">{{ contract.reference }} — {{ contract.title }}</div>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}
+            <div class="alert alert--error">{{ form_errors(form) }}</div>
+        {% endif %}
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Événement déclencheur</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.milestoneType) }}
+                    {{ form_row(form.label) }}
+                    {{ form_row(form.plannedDate) }}
+                    {{ form_row(form.actualDate) }}
+                    {{ form_row(form.amountHt) }}
+                    {{ form_row(form.vatRate) }}
+                    {{ form_row(form.responsible) }}
+                </div>
+                <div class="help">
+                    La réalisation et la facturation sont deux statuts indépendants.
+                    « Prête à facturer » ne signifie jamais « facturée ».
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top:1rem;">
+            <div class="card__header"><div class="card__title">Statuts et conditions</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.completionStatus) }}
+                    {{ form_row(form.billingStatus) }}
+                </div>
+                {{ form_row(form.conditions) }}
+                {{ form_row(form.notes) }}
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer l’échéance</button>
+            <a class="btn btn--ghost" href="{{ path('app_contract_show', {id: contract.idString, onglet: 'echeances'}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

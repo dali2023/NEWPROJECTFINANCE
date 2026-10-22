@@ -92,7 +92,7 @@ class ProjectRepository extends ServiceEntityRepository
             ->leftJoin('p.projectType', 't')
             ->leftJoin('p.manager', 'm')
             ->andWhere('p.deletedAt IS NULL')
-            ->orderBy('p.code', \SortDirection::Descending);
+            ->orderBy('p.code', 'DESC');
     }
 
     public function codeExists(string $code, ?Project $except = null): bool
@@ -178,7 +178,7 @@ class ProjectRepository extends ServiceEntityRepository
             ->where('p.manager = :user OR :user MEMBER OF p.members')
             ->andWhere('p.deletedAt IS NULL')
             ->setParameter('user', $user)
-            ->orderBy('p.code', \SortDirection::Descending)
+            ->orderBy('p.code', 'DESC')
             ->setMaxResults(5)
             ->getQuery()
             ->getResult();

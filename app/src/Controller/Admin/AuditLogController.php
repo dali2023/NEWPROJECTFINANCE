@@ -50,7 +50,7 @@ final class AuditLogController extends AbstractController
     {
         $rows = $auditLogRepository->createQueryBuilder('a')
             ->select('DISTINCT a.entity')
-            ->orderBy('a.entity', \SortDirection::Ascending)
+            ->orderBy('a.entity', 'ASC')
             ->getQuery()
             ->getScalarResult();
 

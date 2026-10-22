@@ -48,7 +48,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     /** @return array{items: list<User>, total: int, page: int, perPage: int, pages: int} */
     public function search(?string $term, ?bool $activeOnly, int $page = 1, int $perPage = self::DEFAULT_PER_PAGE): array
     {
-        $qb = $this->createQueryBuilder('u')->orderBy('u.fullName', \SortDirection::Ascending);
+        $qb = $this->createQueryBuilder('u')->orderBy('u.fullName', 'ASC');
 
         if (null !== $term && '' !== trim($term)) {
             $qb->andWhere('LOWER(u.username) LIKE :term OR LOWER(u.email) LIKE :term OR LOWER(u.fullName) LIKE :term')
@@ -67,7 +67,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     {
         return $this->createQueryBuilder('u')
             ->where('u.isActive = true')
-            ->orderBy('u.fullName', \SortDirection::Ascending)
+            ->orderBy('u.fullName', 'ASC')
             ->getQuery()
             ->getResult();
     }

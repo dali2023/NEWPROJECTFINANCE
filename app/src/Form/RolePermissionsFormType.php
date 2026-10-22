@@ -30,8 +30,8 @@ final class RolePermissionsFormType extends AbstractType
             'choice_label' => static fn (Permission $permission): string => $permission->getLabel().'  ('.$permission->getCode().')',
             'group_by' => static fn (Permission $permission): string => $permission->getModule() ?? 'Général',
             'query_builder' => static fn (PermissionRepository $repository) => $repository->createQueryBuilder('p')
-                ->orderBy('p.module', \SortDirection::Ascending)
-                ->addOrderBy('p.code', \SortDirection::Ascending),
+                ->orderBy('p.module', 'ASC')
+                ->addOrderBy('p.code', 'ASC'),
         ]);
     }
 

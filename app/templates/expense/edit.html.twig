@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier {{ expense.reference }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_expense_index') }}">Charges</a> / <a href="{{ path('app_expense_show', {id: expense.idString}) }}">{{ expense.reference }}</a> / Modifier{% endblock %}
+
+{% block body %}
+    <div class="page-head"><div><h1>Modifier {{ expense.reference }}</h1><div class="page-head__subtitle">La charge reste modifiable tant qu'elle n'est pas approuvée.</div></div></div>
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% include 'expense/_form.html.twig' %}
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer</button>
+            <a class="btn btn--ghost" href="{{ path('app_expense_show', {id: expense.idString}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

@@ -49,7 +49,7 @@ class AuditLogRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('a')
             ->addSelect('u')
             ->leftJoin('a.user', 'u')
-            ->orderBy('a.occurredAt', \SortDirection::Descending);
+            ->orderBy('a.occurredAt', 'DESC');
 
         if (null !== $entity && '' !== trim($entity)) {
             $qb->andWhere('a.entity = :entity')->setParameter('entity', $entity);
@@ -85,7 +85,7 @@ class AuditLogRepository extends ServiceEntityRepository
             ->andWhere('a.entityId = :entityId')
             ->setParameter('entity', $entity)
             ->setParameter('entityId', $entityId)
-            ->orderBy('a.occurredAt', \SortDirection::Descending)
+            ->orderBy('a.occurredAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

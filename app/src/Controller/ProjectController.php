@@ -9,6 +9,8 @@ use App\Enum\ProjectStatus;
 use App\Form\ProjectFormType;
 use App\Repository\AuditLogRepository;
 use App\Repository\ClientRepository;
+use App\Repository\ExpenseRepository;
+use App\Repository\InvoiceRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\ProjectTypeRepository;
 use App\Repository\UserRepository;
@@ -106,15 +108,50 @@ final class ProjectController extends AbstractController
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET'])]
-    public function show(Project $project, AuditLogRepository $auditLogRepository): Response
-    {
+    public function show(
+        Project $project,
+        AuditLogRepository $auditLogRepository,
+        InvoiceRepository $invoiceRepository,
+        ExpenseRepository $expenseRepository,
+    ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
+
+        $invoices = $this->isGranted('invoice.view')
+            ? $invoiceRepository->findBy(['project' => $project], ['issueDate' => 'DESC'])
+            : [];
+        $expenses = $this->isGranted('expense.view')
+            ? $expenseRepository->findBy(['project' => $project], ['expenseDate' => 'DESC'])
+            : [];
+
+        $invoicedTotal = Money::sum(array_map(
+            static fn ($invoice): string => $invoice->getAmountTtc(),
+            $invoices,
+        ));
+        $collectedTotal = Money::sum(array_map(
+            static fn ($invoice): string => $invoice->getPaidAmount(),
+            $invoices,
+        ));
+        $expenseTotal = Money::sum(array_map(
+            static fn ($expense): string => $expense->getAmountTtc(),
+            $expenses,
+        ));
+        $expensePaidTotal = Money::sum(array_map(
+            static fn ($expense): string => $expense->getPaidAmount(),
+            $expenses,
+        ));
 
         return $this->render('project/show.html.twig', [
             'project' => $project,
             'history' => $auditLogRepository->findForEntity('Project', $project->getIdString(), 20),
             'milestones_total' => $project->getMilestonesTotalHt(),
             'contract_gap' => Money::sub($project->getContractAmountHt(), $project->getMilestonesTotalHt()),
+            'invoices' => $invoices,
+            'expenses' => $expenses,
+            'invoiced_total' => $invoicedTotal,
+            'collected_total' => $collectedTotal,
+            'expense_total' => $expenseTotal,
+            'expense_paid_total' => $expensePaidTotal,
+            'direct_margin' => Money::sub($invoicedTotal, $expenseTotal),
         ]);
     }
 

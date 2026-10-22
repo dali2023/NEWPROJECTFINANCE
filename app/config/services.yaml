@@ -30,3 +30,11 @@ services:
     App\Service\ReferenceGenerator:
         arguments:
             $timezone: '%app.timezone%'
+
+    App\Service\ContractDateCalculator:
+        arguments:
+            $timezone: '%app.timezone%'
+
+    App\Service\ContractAlertConfig:
+        arguments:
+            $delays: '%app.contract_alerts%'

@@ -42,7 +42,7 @@ final class ProjectFormType extends AbstractType
                 'query_builder' => static fn (ClientRepository $repository) => $repository->createQueryBuilder('c')
                     ->where('c.isActive = true')
                     ->andWhere('c.deletedAt IS NULL')
-                    ->orderBy('c.name', \SortDirection::Ascending),
+                    ->orderBy('c.name', 'ASC'),
                 'placeholder' => 'Sélectionner un client',
             ])
             ->add('projectType', EntityType::class, [
@@ -51,7 +51,7 @@ final class ProjectFormType extends AbstractType
                 'choice_label' => 'label',
                 'query_builder' => static fn (ProjectTypeRepository $repository) => $repository->createQueryBuilder('t')
                     ->where('t.isActive = true')
-                    ->orderBy('t.sortOrder', \SortDirection::Ascending),
+                    ->orderBy('t.sortOrder', 'ASC'),
                 'placeholder' => 'Sélectionner un type',
             ])
             ->add('manager', EntityType::class, [
@@ -60,7 +60,7 @@ final class ProjectFormType extends AbstractType
                 'choice_label' => static fn (User $user): string => $user->getFullName(),
                 'query_builder' => static fn (UserRepository $repository) => $repository->createQueryBuilder('u')
                     ->where('u.isActive = true')
-                    ->orderBy('u.fullName', \SortDirection::Ascending),
+                    ->orderBy('u.fullName', 'ASC'),
                 'placeholder' => 'Non affecté',
                 'required' => false,
             ])

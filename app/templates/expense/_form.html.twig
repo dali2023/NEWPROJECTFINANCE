@@ -1,0 +1,23 @@
+{% if form.vars.errors|length > 0 %}<div class="alert alert--error">{{ form_errors(form) }}</div>{% endif %}
+
+<section class="card">
+    <div class="card__header"><div class="card__title">Charge</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.category) }}
+            {{ form_row(form.label) }}
+            {{ form_row(form.supplier) }}
+            {{ form_row(form.project) }}
+            {{ form_row(form.contract) }}
+            {{ form_row(form.expenseDate) }}
+            {{ form_row(form.dueDate) }}
+            {{ form_row(form.currencyCode) }}
+        </div>
+        <div class="form-grid">
+            {{ form_row(form.amountHt) }}
+            {{ form_row(form.vatRate) }}
+        </div>
+        <div class="help">Les montants sont calculés en décimaux exacts. La TVA est stockée en pourcentage.</div>
+        {{ form_row(form.notes) }}
+    </div>
+</section>

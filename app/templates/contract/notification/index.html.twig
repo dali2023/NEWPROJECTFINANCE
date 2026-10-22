@@ -1,0 +1,141 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Notifications contractuelles{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / Notifications{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Centre de notifications</h1>
+            <div class="page-head__subtitle">
+                {{ active_count }} alerte{{ active_count > 1 ? 's' : '' }} active{{ active_count > 1 ? 's' : '' }}
+                {% if scope_limited %} — restreint à votre périmètre{% endif %}
+                {% if contract %} · contrat <span class="mono">{{ contract.reference }}</span>{% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            {% if contract %}
+                <a class="btn" href="{{ path('app_contract_notification_index') }}">Toutes les alertes</a>
+            {% endif %}
+            {% if is_granted('contract.notify') %}
+                <form method="post" action="{{ path('app_contract_notification_generate') }}" class="inline-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('contract_notifications_generate') }}">
+                    <button class="btn btn--primary" type="submit">Générer les alertes</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <section class="card">
+        <form method="get" action="{{ path('app_contract_notification_index') }}" class="toolbar">
+            {% if contract %}<input type="hidden" name="contrat" value="{{ contract.idString }}">{% endif %}
+            <div class="field">
+                <label for="q">Recherche</label>
+                <input type="text" id="q" name="q" value="{{ filters.term }}" placeholder="Contrat, message, référence">
+            </div>
+            <div class="field">
+                <label for="type">Événement</label>
+                <select id="type" name="type" data-auto-submit>
+                    <option value="">Tous les événements</option>
+                    {% for item in types %}
+                        <option value="{{ item.value }}" {{ filters.type and filters.type == item ? 'selected' }}>{{ item.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="gravite">Gravité</label>
+                <select id="gravite" name="gravite" data-auto-submit>
+                    <option value="">Toutes</option>
+                    {% for item in severities %}
+                        <option value="{{ item.value }}" {{ filters.severity and filters.severity == item ? 'selected' }}>{{ item.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="statut">Statut</label>
+                <select id="statut" name="statut" data-auto-submit>
+                    <option value="">Tous les statuts</option>
+                    {% for item in statuses %}
+                        <option value="{{ item.value }}" {{ filters.status and filters.status == item ? 'selected' }}>{{ item.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <label class="field field--checkbox">
+                <input type="checkbox" name="historique" value="1" {{ not filters.activeOnly ? 'checked' }} data-auto-submit>
+                <span>Inclure l’historique</span>
+            </label>
+            <button class="btn" type="submit">Filtrer</button>
+        </form>
+
+        {% if result.items is empty %}
+            <div class="empty">Aucune notification ne correspond aux critères.</div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Gravité</th>
+                        <th>Événement</th>
+                        <th>Contrat</th>
+                        <th>Date déclencheuse</th>
+                        <th>Délai</th>
+                        <th>Statut</th>
+                        <th>Destinataire</th>
+                        <th class="actions"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for notification in result.items %}
+                        <tr class="{{ notification.status.value == 'resolved' or notification.status.value == 'dismissed' ? 'is-muted' }}">
+                            <td><span class="badge {{ notification.severity.badgeClass }}">{{ notification.severity.label }}</span></td>
+                            <td>
+                                <div class="cell-main">{{ notification.title }}</div>
+                                <div class="cell-sub">{{ notification.message }}</div>
+                            </td>
+                            <td>
+                                {% if notification.contract %}
+                                    <a class="mono" href="{{ path('app_contract_show', {id: notification.contract.idString}) }}">{{ notification.contract.reference }}</a>
+                                    <div class="cell-sub">{{ notification.contract.client ? notification.contract.client.name : '' }}</div>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td class="num">{{ notification.eventDate ? notification.eventDate|date('d/m/Y') : '—' }}</td>
+                            <td class="num">{{ notification.delayLabel }}</td>
+                            <td>
+                                <span class="badge {{ notification.status.badgeClass }}">{{ notification.status.label }}</span>
+                                {% if notification.closedAt %}<div class="cell-sub">{{ notification.closedAt|date('d/m/Y') }}</div>{% endif %}
+                            </td>
+                            <td>{{ notification.recipient ? notification.recipient.fullName : '—' }}</td>
+                            <td class="actions" style="min-width:12rem;">
+                                {% if notification.contract and is_granted('CONTRACT_NOTIFY', notification.contract) %}
+                                    {% if notification.status.value == 'pending' or notification.status.value == 'acknowledged' %}
+                                        <form method="post" action="{{ path('app_contract_notification_acknowledge', {notificationId: notification.idString}) }}" class="inline-form">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('contract_notification_ack_' ~ notification.idString) }}">
+                                            <button class="btn btn--sm" type="submit">Prendre en charge</button>
+                                        </form>
+                                        <details>
+                                            <summary class="muted">Résoudre</summary>
+                                            <form method="post" action="{{ path('app_contract_notification_resolve', {notificationId: notification.idString}) }}" style="display:grid; gap:.35rem; margin-top:.35rem;">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('contract_notification_resolve_' ~ notification.idString) }}">
+                                                <input class="input" type="text" name="note" placeholder="Motif de clôture" required>
+                                                <button class="btn btn--sm btn--primary" type="submit">Clôturer</button>
+                                            </form>
+                                            <form method="post" action="{{ path('app_contract_notification_dismiss', {notificationId: notification.idString}) }}" style="display:grid; gap:.35rem; margin-top:.35rem;">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('contract_notification_dismiss_' ~ notification.idString) }}">
+                                                <input class="input" type="text" name="reason" placeholder="Motif sans objet" required>
+                                                <button class="btn btn--sm btn--ghost" type="submit">Sans objet</button>
+                                            </form>
+                                        </details>
+                                    {% else %}
+                                        <span class="muted">{{ notification.closureNote ?: 'Traitée' }}</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

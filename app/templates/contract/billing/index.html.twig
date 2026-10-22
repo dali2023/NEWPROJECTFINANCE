@@ -1,0 +1,173 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Facturation à réaliser{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / Facturation à réaliser{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Facturation à réaliser</h1>
+            <div class="page-head__subtitle">
+                Échéances contractuelles prêtes, en retard ou à vérifier
+                {% if scope_limited %} — restreint à votre périmètre{% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            <a class="btn" href="{{ path('app_contract_index') }}">Registre</a>
+            <a class="btn" href="{{ path('app_contract_calendar_index') }}">Calendrier</a>
+        </div>
+    </div>
+
+    <div class="grid grid--stats" style="margin-bottom:1rem;">
+        <div class="card stat">
+            <div class="stat__label">Prêt à facturer</div>
+            <div class="stat__value">{{ ready_total|money(app_currency) }}</div>
+            <div class="stat__hint">Montant HT cumulé</div>
+        </div>
+        <div class="card stat">
+            <div class="stat__label">En retard</div>
+            <div class="stat__value">{{ overdue_total|money(app_currency) }}</div>
+            <div class="stat__hint">Échéances actives dont la date est dépassée</div>
+        </div>
+        <div class="card stat stat--muted">
+            <div class="stat__label">Prévision maintenance</div>
+            <div class="stat__value">{{ forecast_maintenance|money(app_currency) }}</div>
+            <div class="stat__hint">Revenu récurrent prévisionnel</div>
+        </div>
+    </div>
+
+    <section class="card">
+        <form method="get" action="{{ path('app_contract_billing_index') }}" class="toolbar">
+            <div class="field">
+                <label for="q">Recherche</label>
+                <input type="text" id="q" name="q" value="{{ filters.term }}" placeholder="Référence, intitulé, contrat">
+            </div>
+            <div class="field">
+                <label for="statut">Statut de facturation</label>
+                <select id="statut" name="statut" data-auto-submit>
+                    <option value="">Tous les statuts</option>
+                    {% for status in statuses %}
+                        <option value="{{ status.value }}" {{ filters.billingStatus and filters.billingStatus == status ? 'selected' }}>{{ status.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if not scope_limited %}
+                <div class="field">
+                    <label for="projet">Projet</label>
+                    <select id="projet" name="projet" data-auto-submit>
+                        <option value="">Tous les projets</option>
+                        {% for project in projects %}
+                            <option value="{{ project.idString }}" {{ filters.project and filters.project.idString == project.idString ? 'selected' }}>{{ project.code }} — {{ project.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endif %}
+            <label class="field field--checkbox">
+                <input type="checkbox" name="pretes" value="1" {{ filters.readyOnly ? 'checked' }} data-auto-submit>
+                <span>Prêtes seulement</span>
+            </label>
+            <label class="field field--checkbox">
+                <input type="checkbox" name="retard" value="1" {{ filters.overdueOnly ? 'checked' }} data-auto-submit>
+                <span>En retard seulement</span>
+            </label>
+            <button class="btn" type="submit">Filtrer</button>
+        </form>
+
+        {% if result.items is empty %}
+            <div class="empty">Aucune échéance de facturation ne correspond aux critères.</div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Échéance</th>
+                        <th>Contrat / client</th>
+                        <th>Projet</th>
+                        <th>Date</th>
+                        <th>Réalisation</th>
+                        <th>Facturation</th>
+                        <th class="num">Prévu HT</th>
+                        <th class="num">Facturé</th>
+                        <th class="num">Reste</th>
+                        <th class="actions"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for milestone in result.items %}
+                        <tr>
+                            <td>
+                                <div class="cell-main"><a class="mono" href="{{ path('app_contract_show', {id: milestone.contract.idString, onglet: 'echeances'}) }}">{{ milestone.reference }}</a></div>
+                                <div class="cell-sub">{{ milestone.label }} · {{ milestone.milestoneType.label }}</div>
+                                {% if milestone.isOverdue %}<span class="badge badge--danger">En retard</span>{% endif %}
+                            </td>
+                            <td>
+                                <div class="cell-main"><a href="{{ path('app_contract_show', {id: milestone.contract.idString}) }}">{{ milestone.contract.reference }}</a></div>
+                                <div class="cell-sub">{{ milestone.contract.client ? milestone.contract.client.name : '—' }}</div>
+                            </td>
+                            <td>{% if milestone.project %}<span class="mono">{{ milestone.project.code }}</span>{% else %}—{% endif %}</td>
+                            <td class="num">{{ milestone.plannedDate ? milestone.plannedDate|date('d/m/Y') : '—' }}</td>
+                            <td><span class="badge {{ milestone.completionStatus.badgeClass }}">{{ milestone.completionStatus.label }}</span></td>
+                            <td>
+                                <span class="badge {{ milestone.billingStatus.badgeClass }}">{{ milestone.billingStatus.label }}</span>
+                                {% if milestone.invoiceReference %}<div class="cell-sub mono">{{ milestone.invoiceReference }}</div>{% endif %}
+                            </td>
+                            <td class="num">{{ milestone.amountHt|money(milestone.contract.currencyCode) }}</td>
+                            <td class="num">{{ milestone.billedAmountHt|money(milestone.contract.currencyCode) }}</td>
+                            <td class="num"><strong>{{ milestone.remainingToInvoiceHt|money(milestone.contract.currencyCode) }}</strong></td>
+                            <td class="actions" style="min-width:14rem;">
+                                {% if is_granted('CONTRACT_EDIT', milestone.contract) and milestone.completionStatus.value != 'completed' %}
+                                    <form method="post" action="{{ path('app_contract_billing_action', {milestoneId: milestone.idString}) }}" class="inline-form">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('contract_billing_action_' ~ milestone.idString) }}">
+                                        <input type="hidden" name="action" value="complete">
+                                        <button class="btn btn--sm" type="submit">Réalisée</button>
+                                    </form>
+                                {% endif %}
+                                {% if is_granted('CONTRACT_BILL', milestone.contract) and not milestone.fullyInvoiced and milestone.billingStatus.value != 'blocked' %}
+                                    {% if milestone.completionStatus.value == 'completed' and milestone.billingStatus.value not in ['ready_to_invoice', 'partially_invoiced'] %}
+                                        <form method="post" action="{{ path('app_contract_billing_action', {milestoneId: milestone.idString}) }}" class="inline-form">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('contract_billing_action_' ~ milestone.idString) }}">
+                                            <input type="hidden" name="action" value="ready">
+                                            <button class="btn btn--sm" type="submit">Prête</button>
+                                        </form>
+                                    {% endif %}
+                                    {% if milestone.billingStatus.value in ['ready_to_invoice', 'partially_invoiced'] %}
+                                        <form method="post" action="{{ path('app_contract_billing_action', {milestoneId: milestone.idString}) }}" class="inline-form">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('contract_billing_action_' ~ milestone.idString) }}">
+                                            <input type="hidden" name="action" value="invoice">
+                                            <button class="btn btn--sm btn--primary" type="submit">Créer la facture</button>
+                                        </form>
+                                    {% endif %}
+                                    <details>
+                                        <summary class="muted">Reporter / bloquer</summary>
+                                        <form method="post" action="{{ path('app_contract_billing_action', {milestoneId: milestone.idString}) }}" style="display:grid; gap:.35rem; margin-top:.35rem;">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('contract_billing_action_' ~ milestone.idString) }}">
+                                            <input type="hidden" name="action" value="postpone">
+                                            <input class="input" type="date" name="new_date" required>
+                                            <input class="input" type="text" name="reason" placeholder="Motif du report" required>
+                                            <button class="btn btn--sm" type="submit">Reporter</button>
+                                        </form>
+                                        <form method="post" action="{{ path('app_contract_billing_action', {milestoneId: milestone.idString}) }}" style="display:grid; gap:.35rem; margin-top:.35rem;">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('contract_billing_action_' ~ milestone.idString) }}">
+                                            <input type="hidden" name="action" value="block">
+                                            <input class="input" type="text" name="reason" placeholder="Motif du blocage" required>
+                                            <button class="btn btn--sm btn--danger" type="submit">Bloquer</button>
+                                        </form>
+                                    </details>
+                                {% endif %}
+                                {% if is_granted('CONTRACT_BILL', milestone.contract) and milestone.billingStatus.value == 'blocked' %}
+                                    <form method="post" action="{{ path('app_contract_billing_action', {milestoneId: milestone.idString}) }}" class="inline-form">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('contract_billing_action_' ~ milestone.idString) }}">
+                                        <input type="hidden" name="action" value="unblock">
+                                        <button class="btn btn--sm" type="submit">Débloquer</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

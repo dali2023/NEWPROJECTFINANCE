@@ -19,6 +19,9 @@ use Doctrine\ORM\EntityManagerInterface;
 final class ReferenceGenerator
 {
     public const MODULE_PROJECT = 'PRJ';
+    public const MODULE_CONTRACT = 'CTR';
+    public const MODULE_MAINTENANCE = 'MNT';
+    public const MODULE_CONTRACT_MILESTONE = 'ECH';
     public const MODULE_INVOICE = 'FAC';
     public const MODULE_RECEIPT = 'ENC';
     public const MODULE_EXPENSE = 'DEP';

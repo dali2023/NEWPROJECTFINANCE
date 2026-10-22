@@ -45,7 +45,7 @@ final class UserFormType extends AbstractType
                 'choice_label' => 'label',
                 'multiple' => true,
                 'expanded' => true,
-                'query_builder' => static fn ($repository) => $repository->createQueryBuilder('r')->orderBy('r.label', \SortDirection::Ascending),
+                'query_builder' => static fn ($repository) => $repository->createQueryBuilder('r')->orderBy('r.label', 'ASC'),
             ])
             ->add('isActive', CheckboxType::class, [
                 'label' => 'Compte actif',

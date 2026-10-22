@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle retenue de garantie{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / <a href="{{ path('app_contract_show', {id: contract.idString, onglet: 'retenues'}) }}">{{ contract.reference }}</a> / Retenue{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Nouvelle retenue de garantie</h1>
+            <div class="page-head__subtitle">{{ contract.reference }} — {{ contract.title }}</div>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}
+            <div class="alert alert--error">{{ form_errors(form) }}</div>
+        {% endif %}
+
+        <section class="card">
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.amount) }}
+                    {{ form_row(form.currencyCode) }}
+                    {{ form_row(form.eligibilityDate) }}
+                    {{ form_row(form.releaseRequestDate) }}
+                    {{ form_row(form.actualReleaseDate) }}
+                    {{ form_row(form.status) }}
+                </div>
+                {{ form_row(form.notes) }}
+                <div class="help">La libération effective reste suivie séparément de la demande et de l’éligibilité.</div>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer la retenue</button>
+            <a class="btn btn--ghost" href="{{ path('app_contract_show', {id: contract.idString, onglet: 'retenues'}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

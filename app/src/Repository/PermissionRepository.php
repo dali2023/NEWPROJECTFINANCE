@@ -28,8 +28,8 @@ class PermissionRepository extends ServiceEntityRepository
     {
         /** @var list<Permission> $permissions */
         $permissions = $this->createQueryBuilder('p')
-            ->orderBy('p.module', \SortDirection::Ascending)
-            ->addOrderBy('p.code', \SortDirection::Ascending)
+            ->orderBy('p.module', 'ASC')
+            ->addOrderBy('p.code', 'ASC')
             ->getQuery()
             ->getResult();
 

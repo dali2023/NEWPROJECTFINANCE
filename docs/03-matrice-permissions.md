@@ -36,8 +36,14 @@ sans redéploiement.
 | `project.manage` | Créer et modifier un projet |
 | `project.validate` | Valider le statut contractuel d'un projet |
 | `project.close` | Clôturer un projet |
+| `contract.view_all` / `contract.view_own` | Consulter tous les contrats / ses contrats |
+| `contract.manage` | Créer et modifier contrats, avenants, échéances, réceptions et documents |
+| `contract.validate` | Valider, signer ou clôturer un contrat (sensible) |
+| `contract.renew` | Décider d'un renouvellement (sensible) |
+| `contract.bill` | Facturer une échéance contractuelle |
+| `contract.notify` | Générer et traiter les alertes contractuelles |
 | `invoice.view` / `invoice.manage` | Consulter / gérer les factures |
-| `invoice.cancel` | Annuler une facture (sensible) |
+| `invoice.cancel` | Annuler une facture brouillon (sensible) |
 | `receipt.view` / `receipt.manage` | Consulter / gérer les encaissements |
 | `expense.view` / `expense.propose` | Consulter / proposer une dépense |
 | `expense.manage` | Gérer les dépenses et leurs paiements |
@@ -67,6 +73,12 @@ sans redéploiement.
 | `project.manage` | – | – | – | ✓ | – |
 | `project.validate` | – | ✓ | – | – | – |
 | `project.close` | – | ✓ | ✓ | – | – |
+| `contract.view_all`, `contract.view_own` | vue | ✓ | ✓ | ✓ | vue propres |
+| `contract.manage` | – | – | – | ✓ | – |
+| `contract.validate` | – | ✓ | – | – | – |
+| `contract.renew` | – | ✓ | – | ✓ | – |
+| `contract.bill` | – | – | ✓ | – | – |
+| `contract.notify` | – | ✓ | ✓ | ✓ | ✓ |
 | `invoice.view`, `receipt.view` | vue | vue | ✓ | projet | projet |
 | `invoice.manage`, `receipt.manage` | – | – | ✓ | – | – |
 | `invoice.cancel` | – | ✓ | ✓ | – | – |
@@ -97,6 +109,16 @@ sans redéploiement.
 4. Données associés (capital, avances, distributions) : réservées aux
    utilisateurs disposant de `partner.view`.
 5. Toute opération sensible (validation, annulation, clôture, réouverture,
-   accès refusé) écrit une ligne dans `audit_logs` (§5.2 Z, REC-018, Test F).
+   renouvellement, facturation d'échéance, accès refusé) écrit une ligne dans
+   `audit_logs` (§5.2 Z, REC-018, Test F).
 6. Exercice clôturé : toute écriture ordinaire est refusée (§5.4, REC-014),
    seuls `fiscal_year.reopen` puis une correction tracée sont possibles.
+7. **Renouvellement explicite** : aucun contrat n'est renouvelé par simple
+   absence de résiliation. Une décision `contract.renew` crée le nouveau contrat
+   et clôt l'ancien.
+8. **Facturation contractuelle** : une échéance doit être au statut
+   `ready_to_invoice` ou `partially_invoiced` pour produire une facture. Le
+   statut `fully_invoiced` n'est posé qu'à la validation de la facture.
+9. **Séparation des tâches** : l'auteur d'une charge ne peut pas l'approuver ;
+   une facture brouillon ne peut pas être encaissée ; une opération d'associé non
+   validée ne peut pas être réglée.

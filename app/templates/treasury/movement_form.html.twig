@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau mouvement{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_treasury_index') }}">Trésorerie</a> / Nouveau mouvement{% endblock %}
+
+{% block body %}
+    <div class="page-head"><div><h1>Nouveau mouvement de trésorerie</h1><div class="page-head__subtitle">Saisie manuelle d'un encaissement ou d'un décaissement</div></div></div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}<div class="alert alert--error">{{ form_errors(form) }}</div>{% endif %}
+        <section class="card">
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.bankAccount) }}
+                    {{ form_row(form.movementDate) }}
+                    {{ form_row(form.direction) }}
+                    {{ form_row(form.movementType) }}
+                    {{ form_row(form.amount) }}
+                    {{ form_row(form.label) }}
+                </div>
+                {{ form_row(form.notes) }}
+                <div class="help">La référence du mouvement est générée automatiquement et le solde du compte est recalculé.</div>
+            </div>
+        </section>
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer le mouvement</button>
+            <a class="btn btn--ghost" href="{{ path('app_treasury_index') }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

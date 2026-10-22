@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Renouvellement {{ contract.reference }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / <a href="{{ path('app_contract_show', {id: contract.idString, onglet: 'renouvellements'}) }}">{{ contract.reference }}</a> / Renouvellement{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Décision de renouvellement</h1>
+            <div class="page-head__subtitle">
+                {{ contract.reference }} — fin contractuelle {{ contract.effectiveEndDate ? contract.effectiveEndDate|date('d/m/Y') : 'non renseignée' }}
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert--info">
+        Aucun renouvellement n’est automatique. Cette décision est explicite, autorisée et journalisée.
+        Une décision « acceptée » crée un nouveau contrat et clôt le contrat arrivé à échéance.
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}
+            <div class="alert alert--error">{{ form_errors(form) }}</div>
+        {% endif %}
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Décision et nouvelles dates</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.decisionStatus) }}
+                    {{ form_row(form.newStartDate) }}
+                    {{ form_row(form.newEndDate) }}
+                    {{ form_row(form.newAmountHt) }}
+                    {{ form_row(form.responsible) }}
+                    {{ form_row(form.generateMilestones) }}
+                </div>
+                {{ form_row(form.notes) }}
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer la décision</button>
+            <a class="btn btn--ghost" href="{{ path('app_contract_show', {id: contract.idString, onglet: 'renouvellements'}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

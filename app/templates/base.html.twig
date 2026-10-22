@@ -47,12 +47,50 @@
                 {% endif %}
             </div>
 
+            {% if can('contract.view_all') or can('contract.view_own') or can('contract.notify') %}
+                <div class="nav-group">
+                    <div class="nav-group__label">Contrats et maintenance</div>
+                    {% if can('contract.view_all') or can('contract.view_own') %}
+                        <a class="nav-link {{ route starts with 'app_contract_' and not (route starts with 'app_contract_calendar_') and not (route starts with 'app_contract_billing_') and not (route starts with 'app_contract_notification_') ? 'is-active' }}" href="{{ path('app_contract_index') }}">
+                            <span class="nav-link__icon">▦</span> Registre des contrats
+                        </a>
+                        <a class="nav-link {{ route starts with 'app_contract_calendar_' ? 'is-active' }}" href="{{ path('app_contract_calendar_index') }}">
+                            <span class="nav-link__icon">▥</span> Calendrier
+                        </a>
+                        <a class="nav-link {{ route starts with 'app_contract_billing_' ? 'is-active' }}" href="{{ path('app_contract_billing_index') }}">
+                            <span class="nav-link__icon">▧</span> Facturation à réaliser
+                        </a>
+                    {% endif %}
+                    {% if can('contract.notify') %}
+                        <a class="nav-link {{ route starts with 'app_contract_notification_' ? 'is-active' }}" href="{{ path('app_contract_notification_index') }}">
+                            <span class="nav-link__icon">◔</span> Alertes contractuelles
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+
             <div class="nav-group">
-                <div class="nav-group__label">Finance — phases 3 à 5</div>
-                <span class="nav-link" style="opacity:.45; cursor:not-allowed;">Facturation <span class="tag" style="margin-left:auto;">à venir</span></span>
-                <span class="nav-link" style="opacity:.45; cursor:not-allowed;">Charges <span class="tag" style="margin-left:auto;">à venir</span></span>
-                <span class="nav-link" style="opacity:.45; cursor:not-allowed;">Trésorerie <span class="tag" style="margin-left:auto;">à venir</span></span>
-                <span class="nav-link" style="opacity:.45; cursor:not-allowed;">Associés <span class="tag" style="margin-left:auto;">à venir</span></span>
+                <div class="nav-group__label">Finance</div>
+                {% if can('invoice.view') %}
+                    <a class="nav-link {{ route starts with 'app_invoice_' ? 'is-active' }}" href="{{ path('app_invoice_index') }}">
+                        <span class="nav-link__icon">▤</span> Facturation
+                    </a>
+                {% endif %}
+                {% if can('expense.view') %}
+                    <a class="nav-link {{ route starts with 'app_expense_' ? 'is-active' }}" href="{{ path('app_expense_index') }}">
+                        <span class="nav-link__icon">▥</span> Charges
+                    </a>
+                {% endif %}
+                {% if can('treasury.view') %}
+                    <a class="nav-link {{ route starts with 'app_treasury_' ? 'is-active' }}" href="{{ path('app_treasury_index') }}">
+                        <span class="nav-link__icon">◫</span> Trésorerie
+                    </a>
+                {% endif %}
+                {% if can('partner.view') %}
+                    <a class="nav-link {{ route starts with 'app_partner_' ? 'is-active' }}" href="{{ path('app_partner_index') }}">
+                        <span class="nav-link__icon">◉</span> Associés
+                    </a>
+                {% endif %}
             </div>
 
             {% if can('admin.referentials') or can('admin.users') or can('admin.audit') or can('fiscal_year.close') %}

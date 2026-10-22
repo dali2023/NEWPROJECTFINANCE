@@ -22,8 +22,8 @@ class ProjectTypeRepository extends ServiceEntityRepository
     public function findAllOrdered(): array
     {
         return $this->createQueryBuilder('t')
-            ->orderBy('t.sortOrder', \SortDirection::Ascending)
-            ->addOrderBy('t.label', \SortDirection::Ascending)
+            ->orderBy('t.sortOrder', 'ASC')
+            ->addOrderBy('t.label', 'ASC')
             ->getQuery()
             ->getResult();
     }
@@ -33,8 +33,8 @@ class ProjectTypeRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('t')
             ->where('t.isActive = true')
-            ->orderBy('t.sortOrder', \SortDirection::Ascending)
-            ->addOrderBy('t.label', \SortDirection::Ascending)
+            ->orderBy('t.sortOrder', 'ASC')
+            ->addOrderBy('t.label', 'ASC')
             ->getQuery()
             ->getResult();
     }

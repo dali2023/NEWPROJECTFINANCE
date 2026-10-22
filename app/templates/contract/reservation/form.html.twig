@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle réserve{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / <a href="{{ path('app_contract_show', {id: contract.idString, onglet: 'receptions'}) }}">{{ contract.reference }}</a> / Réserve{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Constat d’une réserve</h1>
+            <div class="page-head__subtitle">{{ receipt.receiptType.label }} du {{ receipt.plannedDate ? receipt.plannedDate|date('d/m/Y') : '—' }}</div>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}
+            <div class="alert alert--error">{{ form_errors(form) }}</div>
+        {% endif %}
+
+        <section class="card">
+            <div class="card__body">
+                {{ form_row(form.description) }}
+                <div class="form-grid">
+                    {{ form_row(form.dateIdentified) }}
+                    {{ form_row(form.plannedResolutionDate) }}
+                    {{ form_row(form.actualResolutionDate) }}
+                    {{ form_row(form.status) }}
+                    {{ form_row(form.responsible) }}
+                </div>
+                {{ form_row(form.notes) }}
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer la réserve</button>
+            <a class="btn btn--ghost" href="{{ path('app_contract_show', {id: contract.idString, onglet: 'receptions'}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

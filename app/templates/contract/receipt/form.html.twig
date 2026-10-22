@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ receipt.idString ? 'Modifier la réception' : 'Nouvelle réception' }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / <a href="{{ path('app_contract_show', {id: contract.idString, onglet: 'receptions'}) }}">{{ contract.reference }}</a> / Réception{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ receipt.idString ? 'Modifier la réception' : 'Nouvelle réception' }}</h1>
+            <div class="page-head__subtitle">{{ contract.reference }} — {{ contract.title }}</div>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}
+            <div class="alert alert--error">{{ form_errors(form) }}</div>
+        {% endif %}
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Réception</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.receiptType) }}
+                    {{ form_row(form.plannedDate) }}
+                    {{ form_row(form.actualDate) }}
+                    {{ form_row(form.pvReference) }}
+                    {{ form_row(form.warrantyStartDate) }}
+                    {{ form_row(form.warrantyEndDate) }}
+                </div>
+                <div class="help">
+                    La réception effective est validée séparément par un utilisateur habilité.
+                    Ses réserves restent suivies jusqu’à leur levée.
+                </div>
+                {{ form_row(form.notes) }}
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer la réception</button>
+            <a class="btn btn--ghost" href="{{ path('app_contract_show', {id: contract.idString, onglet: 'receptions'}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

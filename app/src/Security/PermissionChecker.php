@@ -35,6 +35,22 @@ final class PermissionChecker
         return $this->has($user, 'project.view_all');
     }
 
+    /** L'utilisateur peut-il consulter tous les contrats ou seulement les siens ? */
+    public function canViewAllContracts(?User $user): bool
+    {
+        return $this->has($user, 'contract.view_all');
+    }
+
+    /** Portée de lecture des contrats : null signifie « tous les contrats ». */
+    public function contractScope(?User $user): ?User
+    {
+        if (null === $user) {
+            return null;
+        }
+
+        return $this->canViewAllContracts($user) ? null : $user;
+    }
+
     /**
      * Portée de lecture des projets : null signifie « tous les projets ».
      * Utilisée par les contrôleurs pour restreindre les requêtes (§3.5).

@@ -1,0 +1,93 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ partner.name }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_partner_index') }}">Associés</a> / {{ partner.name }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ partner.name }} <span class="badge {{ partner.active ? 'badge--success' : 'badge--neutral' }}">{{ partner.active ? 'Actif' : 'Inactif' }}</span></h1>
+            <div class="page-head__subtitle">{{ partner.code }} · {{ partner.partnerType.label }}</div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('partner.manage') %}
+                <a class="btn" href="{{ path('app_partner_edit', {id: partner.idString}) }}">Modifier la fiche</a>
+                <a class="btn btn--primary" href="{{ path('app_partner_transaction_new', {id: partner.idString}) }}">Nouvelle opération</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid--stats" style="margin-bottom:1rem;">
+        <div class="card stat"><div class="stat__label">Part du capital</div><div class="stat__value">{{ partner.ownershipPercent|money_rate }}</div><div class="stat__hint">Pourcentage détenu</div></div>
+        <div class="card stat"><div class="stat__label">Capital apporté</div><div class="stat__value">{{ partner.capitalContributed|money(app_currency) }}</div><div class="stat__hint">Apports en capital</div></div>
+        <div class="card stat"><div class="stat__label">Compte courant</div><div class="stat__value">{{ partner.currentAccountBalance|money(app_currency) }}</div><div class="stat__hint">Avances nettes de remboursements</div></div>
+        <div class="card stat"><div class="stat__label">Dividendes</div><div class="stat__value">{{ partner.dividendsReceived|money(app_currency) }}</div><div class="stat__hint">Distributions enregistrées</div></div>
+    </div>
+
+    <div class="grid grid--2">
+        <section class="card">
+            <div class="card__header"><div class="card__title">Coordonnées</div></div>
+            <div class="card__body">
+                <dl class="definition">
+                    <dt>Forme juridique</dt><dd>{{ partner.partnerType.label }}</dd>
+                    <dt>Adresse électronique</dt><dd>{{ partner.email ?: '—' }}</dd>
+                    <dt>Téléphone</dt><dd>{{ partner.phone ?: '—' }}</dd>
+                    <dt>Adresse</dt><dd>{{ partner.address ?: '—' }}</dd>
+                </dl>
+                {% if partner.notes %}<div class="divider"></div><p style="white-space:pre-line;">{{ partner.notes }}</p>{% endif %}
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Synthèse</div></div>
+            <div class="card__body">
+                <div class="help">Les opérations sont validées puis réglées. Un règlement crée un mouvement de trésorerie daté du jour de l'opération.</div>
+            </div>
+        </section>
+    </div>
+
+    <section class="card" style="margin-top:1rem;">
+        <div class="card__header"><div class="card__title">Opérations</div></div>
+        {% if partner.transactions is empty %}
+            <div class="empty">Aucune opération pour cet associé.</div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Référence</th><th>Nature</th><th>Date</th><th>Libellé</th><th class="num">Montant</th><th>Statut</th><th>Compte</th><th class="actions"></th></tr></thead>
+                    <tbody>
+                    {% for transaction in partner.transactions %}
+                        <tr>
+                            <td class="mono">{{ transaction.reference }}</td>
+                            <td>{{ transaction.transactionType.label }}</td>
+                            <td class="num">{{ transaction.transactionDate|date('d/m/Y') }}</td>
+                            <td>{{ transaction.label }}</td>
+                            <td class="num">{{ transaction.amount|money(transaction.currencyCode) }}</td>
+                            <td><span class="badge {{ transaction.status.badgeClass }}">{{ transaction.status.label }}</span></td>
+                            <td>{{ transaction.bankAccount ? transaction.bankAccount.name : '—' }}</td>
+                            <td class="actions" style="min-width:14rem;">
+                                {% if transaction.status.value == 'planned' and can('partner.validate') %}
+                                    <form method="post" action="{{ path('app_partner_transaction_validate', {transactionId: transaction.idString}) }}" class="inline-form">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('partner_transaction_validate_' ~ transaction.idString) }}">
+                                        <button class="btn btn--sm" type="submit">Valider</button>
+                                    </form>
+                                {% endif %}
+                                {% if transaction.status.value == 'validated' and can('partner.manage') %}
+                                    <form method="post" action="{{ path('app_partner_transaction_pay', {transactionId: transaction.idString}) }}" style="display:grid; gap:.35rem;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('partner_transaction_pay_' ~ transaction.idString) }}">
+                                        <select name="account" class="input" required>
+                                            <option value="">Compte de règlement</option>
+                                            {% for account in accounts %}<option value="{{ account.idString }}">{{ account.name }}</option>{% endfor %}
+                                        </select>
+                                        <button class="btn btn--sm btn--primary" type="submit">Régler</button>
+                                    </form>
+                                {% endif %}
+                                {% if transaction.paidAt %}<div class="cell-sub">Réglée le {{ transaction.paidAt|date('d/m/Y') }}</div>{% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

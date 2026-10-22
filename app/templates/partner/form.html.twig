@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ is_new ? 'Nouvel associé' : 'Modifier l’associé' }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_partner_index') }}">Associés</a> / {{ is_new ? 'Nouvel associé' : partner.name }}{% endblock %}
+
+{% block body %}
+    <div class="page-head"><div><h1>{{ is_new ? 'Nouvel associé' : 'Modifier l’associé' }}</h1></div></div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}<div class="alert alert--error">{{ form_errors(form) }}</div>{% endif %}
+        <section class="card">
+            <div class="card__header"><div class="card__title">Identité et participation</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.code) }}
+                    {{ form_row(form.name) }}
+                    {{ form_row(form.partnerType) }}
+                    {{ form_row(form.ownershipPercent) }}
+                    {{ form_row(form.email) }}
+                    {{ form_row(form.phone) }}
+                    {{ form_row(form.address) }}
+                </div>
+                {{ form_row(form.isActive) }}
+                {{ form_row(form.notes) }}
+                <div class="help">Les données de capital et de comptes courants sont sensibles : leur consultation est contrôlée par permission.</div>
+            </div>
+        </section>
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer l’associé</button>
+            <a class="btn btn--ghost" href="{{ is_new ? path('app_partner_index') : path('app_partner_show', {id: partner.idString}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

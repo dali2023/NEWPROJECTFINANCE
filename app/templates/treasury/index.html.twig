@@ -1,0 +1,114 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Trésorerie{% endblock %}
+{% block breadcrumb %}Finance / Trésorerie{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Trésorerie</h1>
+            <div class="page-head__subtitle">Comptes, encaissements et décaissements</div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('treasury.manage') %}
+                <a class="btn" href="{{ path('app_treasury_account_new') }}">Nouveau compte</a>
+                <a class="btn btn--primary" href="{{ path('app_treasury_movement_new') }}">Nouveau mouvement</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid--stats" style="margin-bottom:1rem;">
+        <div class="card stat"><div class="stat__label">Trésorerie disponible</div><div class="stat__value">{{ total_balance|money(app_currency) }}</div><div class="stat__hint">Somme des soldes de comptes</div></div>
+        <div class="card stat"><div class="stat__label">Encaissements du mois</div><div class="stat__value">{{ month_inflows|money(app_currency) }}</div><div class="stat__hint">Mouvements entrants</div></div>
+        <div class="card stat"><div class="stat__label">Décaissements du mois</div><div class="stat__value">{{ month_outflows|money(app_currency) }}</div><div class="stat__hint">Mouvements sortants</div></div>
+    </div>
+
+    <section class="card" style="margin-bottom:1rem;">
+        <div class="card__header"><div class="card__title">Comptes</div></div>
+        {% if accounts is empty %}
+            <div class="empty">Aucun compte de trésorerie. Créez un compte pour suivre les règlements.</div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Compte</th><th>Banque</th><th>Devise</th><th>Ouverture</th><th class="num">Solde d'ouverture</th><th class="num">Solde actuel</th><th>Statut</th><th class="actions"></th></tr></thead>
+                    <tbody>
+                    {% for account in accounts %}
+                        <tr>
+                            <td><a href="{{ path('app_treasury_account_show', {id: account.idString}) }}">{{ account.name }}</a><div class="cell-sub mono">{{ account.iban ?: account.accountNumber ?: '' }}</div></td>
+                            <td>{{ account.bankName ?: '—' }}</td>
+                            <td>{{ account.currencyCode }}</td>
+                            <td class="num">{{ account.openingDate|date('d/m/Y') }}</td>
+                            <td class="num">{{ account.openingBalance|money(account.currencyCode) }}</td>
+                            <td class="num"><strong>{{ account.balance|money(account.currencyCode) }}</strong></td>
+                            <td><span class="badge {{ account.active ? 'badge--success' : 'badge--neutral' }}">{{ account.active ? 'Actif' : 'Inactif' }}</span></td>
+                            <td class="actions"><a class="btn btn--ghost btn--sm" href="{{ path('app_treasury_account_show', {id: account.idString}) }}">Ouvrir</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="card">
+        <div class="card__header"><div class="card__title">Mouvements</div></div>
+        <form method="get" action="{{ path('app_treasury_index') }}" class="toolbar" style="padding:0 1rem 1rem;">
+            <div class="field"><label for="q">Recherche</label><input id="q" name="q" value="{{ filters.term }}" placeholder="Référence, libellé"></div>
+            <div class="field">
+                <label for="compte">Compte</label>
+                <select id="compte" name="compte" data-auto-submit>
+                    <option value="">Tous les comptes</option>
+                    {% for account in accounts %}<option value="{{ account.idString }}" {{ filters.account and filters.account.idString == account.idString ? 'selected' }}>{{ account.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="sens">Sens</label>
+                <select id="sens" name="sens" data-auto-submit>
+                    <option value="">Tous</option>
+                    {% for direction in directions %}<option value="{{ direction.value }}" {{ filters.direction and filters.direction == direction ? 'selected' }}>{{ direction.label }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="origine">Origine</label>
+                <select id="origine" name="origine" data-auto-submit>
+                    <option value="">Toutes</option>
+                    {% for type in types %}<option value="{{ type.value }}" {{ filters.type and filters.type == type ? 'selected' }}>{{ type.label }}</option>{% endfor %}
+                </select>
+            </div>
+            <button class="btn" type="submit">Filtrer</button>
+        </form>
+
+        {% if result.items is empty %}
+            <div class="empty">Aucun mouvement ne correspond aux critères.</div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Référence</th><th>Date</th><th>Compte</th><th>Libellé</th><th>Origine</th><th>Sens</th><th class="num">Montant</th><th>Rapprochement</th><th class="actions"></th></tr></thead>
+                    <tbody>
+                    {% for movement in result.items %}
+                        <tr>
+                            <td class="mono">{{ movement.reference }}</td>
+                            <td class="num">{{ movement.movementDate|date('d/m/Y') }}</td>
+                            <td>{{ movement.bankAccount ? movement.bankAccount.name : '—' }}</td>
+                            <td>{{ movement.label }}</td>
+                            <td>{{ movement.movementType.label }}</td>
+                            <td><span class="badge {{ movement.direction.badgeClass }}">{{ movement.direction.label }}</span></td>
+                            <td class="num">{{ movement.amount|money(movement.bankAccount ? movement.bankAccount.currencyCode : app_currency) }}</td>
+                            <td>{% if movement.reconciled %}<span class="badge badge--success">Rapproché</span>{% else %}<span class="badge badge--neutral">À rapprocher</span>{% endif %}</td>
+                            <td class="actions">
+                                {% if not movement.reconciled and can('treasury.manage') %}
+                                    <form method="post" action="{{ path('app_treasury_movement_reconcile', {movementId: movement.idString}) }}" class="inline-form">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('treasury_reconcile_' ~ movement.idString) }}">
+                                        <button class="btn btn--sm" type="submit">Rapprocher</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

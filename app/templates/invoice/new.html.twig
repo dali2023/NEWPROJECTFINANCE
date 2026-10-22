@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle facture{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_invoice_index') }}">Facturation</a> / Nouvelle{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div><h1>Nouvelle facture</h1><div class="page-head__subtitle">Numéro réservé : <span class="mono">{{ invoice.number }}</span></div></div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% include 'invoice/_form.html.twig' %}
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Créer la facture</button>
+            <a class="btn btn--ghost" href="{{ path('app_invoice_index') }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

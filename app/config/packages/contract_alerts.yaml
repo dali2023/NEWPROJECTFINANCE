@@ -1,0 +1,13 @@
+parameters:
+    # Délais de notification contractuelle, en jours avant l'échéance.
+    # Une valeur négative déclenche une alerte après l'échéance.
+    # Ces paramètres sont documentés dans docs/08-parametrage-alertes.md.
+    app.contract_alerts:
+        contract_expiration: [90, 60, 30, 7]
+        maintenance_renewal: [90, 60, 30]
+        provisional_receipt: [30, 7, 0]
+        final_receipt: [60, 30, 7, 0]
+        billing_due: [15, 7, 0, -1]
+        reservation_lifting: [15, 7, 0]
+        warranty_end: [60, 30, 7]
+        retention_release: [0, -1]

@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ account.name }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_treasury_index') }}">Trésorerie</a> / {{ account.name }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ account.name }} <span class="badge {{ account.active ? 'badge--success' : 'badge--neutral' }}">{{ account.active ? 'Actif' : 'Inactif' }}</span></h1>
+            <div class="page-head__subtitle">{{ account.bankName ?: 'Compte de trésorerie' }} · {{ account.currencyCode }}</div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('treasury.manage') %}
+                <a class="btn" href="{{ path('app_treasury_account_edit', {id: account.idString}) }}">Modifier</a>
+                <a class="btn btn--primary" href="{{ path('app_treasury_movement_new') }}">Nouveau mouvement</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid--stats" style="margin-bottom:1rem;">
+        <div class="card stat"><div class="stat__label">Solde actuel</div><div class="stat__value">{{ account.balance|money(account.currencyCode) }}</div><div class="stat__hint">Ouverture : {{ account.openingBalance|money(account.currencyCode) }}</div></div>
+        <div class="card stat"><div class="stat__label">Mouvements</div><div class="stat__value">{{ account.movements|length }}</div><div class="stat__hint">Depuis le {{ account.openingDate|date('d/m/Y') }}</div></div>
+    </div>
+
+    <div class="grid grid--2">
+        <section class="card">
+            <div class="card__header"><div class="card__title">Coordonnées bancaires</div></div>
+            <div class="card__body">
+                <dl class="definition">
+                    <dt>Banque</dt><dd>{{ account.bankName ?: '—' }}</dd>
+                    <dt>Numéro de compte</dt><dd class="mono">{{ account.accountNumber ?: '—' }}</dd>
+                    <dt>IBAN / RIB</dt><dd class="mono">{{ account.iban ?: '—' }}</dd>
+                    <dt>Date d'ouverture</dt><dd>{{ account.openingDate|date('d/m/Y') }}</dd>
+                </dl>
+                {% if account.notes %}<div class="divider"></div><p style="white-space:pre-line;">{{ account.notes }}</p>{% endif %}
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Derniers mouvements</div></div>
+            {% if account.movements is empty %}
+                <div class="empty">Aucun mouvement sur ce compte.</div>
+            {% else %}
+                <div class="table-wrap"><table class="table table--compact"><thead><tr><th>Date</th><th>Libellé</th><th>Sens</th><th class="num">Montant</th></tr></thead><tbody>
+                {% for movement in account.movements|slice(0, 8) %}<tr><td>{{ movement.movementDate|date('d/m/Y') }}</td><td><span class="mono">{{ movement.reference }}</span> · {{ movement.label }}</td><td>{{ movement.direction.label }}</td><td class="num">{{ movement.amount|money(account.currencyCode) }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            {% endif %}
+        </section>
+    </div>
+{% endblock %}

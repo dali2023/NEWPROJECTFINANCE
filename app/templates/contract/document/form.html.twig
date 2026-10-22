@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Déposer un document{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_contract_index') }}">Contrats</a> / <a href="{{ path('app_contract_show', {id: contract.idString, onglet: 'documents'}) }}">{{ contract.reference }}</a> / Document{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Déposer un document contractuel</h1>
+            <div class="page-head__subtitle">{{ contract.reference }} — {{ contract.title }}</div>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}
+            <div class="alert alert--error">{{ form_errors(form) }}</div>
+        {% endif %}
+
+        <section class="card">
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.label) }}
+                    {{ form_row(form.documentType) }}
+                    {{ form_row(form.file) }}
+                </div>
+                {{ form_row(form.notes) }}
+                <div class="help">Les fichiers sont stockés hors du répertoire public et restitués après contrôle des permissions.</div>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Déposer le document</button>
+            <a class="btn btn--ghost" href="{{ path('app_contract_show', {id: contract.idString, onglet: 'documents'}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

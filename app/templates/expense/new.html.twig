@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle charge{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_expense_index') }}">Charges</a> / Nouvelle{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div><h1>Nouvelle charge</h1><div class="page-head__subtitle">Référence réservée : <span class="mono">{{ expense.reference }}</span></div></div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% include 'expense/_form.html.twig' %}
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Créer la charge</button>
+            <a class="btn btn--ghost" href="{{ path('app_expense_index') }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

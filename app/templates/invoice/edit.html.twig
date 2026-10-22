@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier {{ invoice.number }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_invoice_index') }}">Facturation</a> / <a href="{{ path('app_invoice_show', {id: invoice.idString}) }}">{{ invoice.number }}</a> / Modifier{% endblock %}
+
+{% block body %}
+    <div class="page-head"><div><h1>Modifier {{ invoice.number }}</h1><div class="page-head__subtitle">Seul un brouillon reste modifiable.</div></div></div>
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% include 'invoice/_form.html.twig' %}
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer</button>
+            <a class="btn btn--ghost" href="{{ path('app_invoice_show', {id: invoice.idString}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}
