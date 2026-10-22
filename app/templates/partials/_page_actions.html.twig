@@ -1,9 +1,19 @@
 {# Boutons d'export et d'impression communs aux écrans de liste. #}
 {% if export_path is defined and export_path %}
-    <a class="btn btn--ghost" href="{{ export_path }}" title="Télécharger les données affichées au format Excel">
+    <a class="btn btn--excel" href="{{ export_path }}" title="Télécharger les données affichées au format Excel">
+        <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v11"/>
+            <path d="m7.5 10 4.5 4.5L16.5 10"/>
+            <path d="M5 20h14"/>
+        </svg>
         Exporter Excel
     </a>
 {% endif %}
-<button type="button" class="btn btn--ghost" data-print title="Imprimer cette page">
+<button type="button" class="btn btn--print" data-print title="Imprimer cette page">
+    <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 8V3h10v5"/>
+        <path d="M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/>
+        <rect x="7" y="14" width="10" height="7" rx="1"/>
+    </svg>
     Imprimer
 </button>
