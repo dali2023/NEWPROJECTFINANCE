@@ -1,15 +1,15 @@
-# Dossier de recette — socle, module 15 et finances
+# Dossier de recette — socle, module 15, finances et prospects
 
 **Application :** ONE ERP Finance & Project Control  
-**Version testée :** 1.1.0 (socle, module 15, facturation, charges, trésorerie et associés)  
-**Date :** 22 octobre 2026  
+**Version testée :** 1.2.0 (socle, module 15, facturation, charges, trésorerie, associés et prospects)  
+**Date :** 25 octobre 2026  
 **Environnement :** Docker Compose — PHP 8.3.36, Symfony 7.4.21, PostgreSQL 16
 
 ## 1. Objet et méthode
 
 Ce dossier présente les résultats des scénarios de recette du cahier des charges
 v1.0 (§10) pour le périmètre livré : sécurité, référentiels, projets, contrats,
-maintenance, réceptions, facturation, charges, trésorerie et associés.
+maintenance, réceptions, facturation, charges, trésorerie, associés et prospects.
 
 Les scénarios dépendant des modules non livrés (répartition indirecte,
 immobilisations, résultat annuel, distribution, exports PDF/XLSX et reporting)
@@ -28,13 +28,13 @@ Légende :
 
 | Indicateur | Résultat |
 |---|---|
-| Tests automatisés | **88 tests, 368 assertions - OK** |
+| Tests automatisés | **95 tests, 477 assertions - OK** |
 | Scénarios REC entièrement réussis | 25 (8 du socle + REC-021 à REC-037) |
 | Scénarios REC partiels | 7 |
 | Scénarios REC en attente de phase ultérieure | 5 |
 | Anomalies bloquantes | 0 |
 | Anomalies majeures | 0 |
-| Syntaxe Twig | 64 fichiers valides |
+| Syntaxe Twig | 81 fichiers valides |
 | Conteneur Symfony | `lint:container` OK |
 | Schéma Doctrine | `doctrine:schema:validate` OK |
 
@@ -100,7 +100,7 @@ docker compose exec -u application php php bin/phpunit
 | REC-034 | Délais d'alerte paramétrables | ✅ | `testRec034…` — contrat à 40 jours : alertes J-90 et J-60, pas J-30 ni J-7 |
 | REC-035 | Idempotence des alertes | ✅ | `testRec035…` — seconde génération : 0 alerte, total inchangé |
 | REC-036 | Facturation à réaliser | ✅ | `testRec036…` — prêtes `15000.000`, en retard `10000.000`, bloquées exclues |
-| REC-037 | Exports Excel et impression | ✅ | `SpreadsheetExporterTest` — classeur `.xlsx` valide, totaux et formats ; `ExportPrintTest` — 15 routes d'export en `.xlsx` et actions d'impression présentes |
+| REC-037 | Exports Excel et impression | ✅ | `SpreadsheetExporterTest` — classeur `.xlsx` valide, totaux et formats ; `ExportPrintTest` — 16 routes d'export en `.xlsx` et actions d'impression présentes |
 
 ### 5.1. Vérifications complémentaires des finances
 
@@ -114,6 +114,27 @@ couvrent les parcours de trésorerie :
   règlement refusé avant validation, puis règlement de `3000.000`, statut `paid`,
   décaissement `partner_repayment` et solde de compte `97000.000`.
 
+### 5.2. Vérifications du module Prospects
+
+Le module Prospects est couvert par `ProspectManagementTest` (5 tests, 104
+assertions) et par les contrôles d'export/impression :
+
+- création et modification manuelles d'un prospect, référence `PRO-*`, statut,
+  montant et responsable ;
+- conversion : un client `CLI-*`, un projet `PRJ-*` au statut **Opportunité** et
+  un contrat `CTR-*` **Brouillon** sont créés, liés entre eux et au prospect ;
+  le prospect passe à **Converti**, avec audit de la conversion ;
+- import Excel : mise à jour d'un doublon par email, puis par nom + ville en
+  l'absence d'email ; une ligne invalide est ignorée avec son numéro et son motif ;
+- import avec colonnes arbitraires : la correspondance explicite des colonnes
+  conditionne la création des champs ;
+- permissions serveur : `prospect.view` ouvre la liste, mais l'import, la
+  création et la conversion exigent les permissions dédiées ; la conversion
+  vérifie également `client.manage`, `project.manage` et `contract.manage`.
+
+L'export `/prospects/export` et le bouton d'impression de la liste sont vérifiés
+par `ExportPrintTest`.
+
 ## 6. Vérifications manuelles complémentaires
 
 Réalisées dans un navigateur et par requêtes HTTP authentifiées :
@@ -125,6 +146,7 @@ Réalisées dans un navigateur et par requêtes HTTP authentifiées :
 | Liste, création, modification et onglets d'un projet | OK |
 | Liste, création et désactivation d'un client | OK |
 | Liste et création d'un fournisseur | OK |
+| Prospects : liste, création, modification, import Excel et conversion | OK |
 | Exercices : liste, création, clôture, réouverture | OK |
 | Types de projet, utilisateurs et rôles | OK |
 | Journal d'audit | OK |
@@ -160,10 +182,10 @@ Réalisées dans un navigateur et par requêtes HTTP authentifiées :
 
 ## 8. Conclusion
 
-Le périmètre socle, module 15 et finances (facturation, charges, trésorerie et
-associés) est **réceptionnable** sous réserve de la validation formelle par la
-direction et du maintien des scénarios partiels ou en attente dans le plan de
-recette global.
+Le périmètre socle, module 15, finances (facturation, charges, trésorerie et
+associés) et prospects est **réceptionnable** sous réserve de la validation
+formelle par la direction et du maintien des scénarios partiels ou en attente
+dans le plan de recette global.
 
 | Rôle | Nom | Date | Visa |
 |---|---|---|---|

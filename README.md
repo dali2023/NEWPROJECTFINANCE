@@ -8,10 +8,11 @@ v1.0 du 21/10/2026.
 > générale officielle ni les déclarations fiscales.
 
 **Périmètre livré :** socle et sécurité, référentiels (clients, fournisseurs,
-types de projet), projets, module 15 (contrats, maintenance, réceptions,
-renouvellements, retenues, calendrier et alertes), facturation, charges,
-trésorerie et associés. Les modules de répartition indirecte, immobilisations,
-résultat annuel, distribution et reporting sont annoncés comme « à venir ».
+prospects, types de projet), projets, module 15 (contrats, maintenance,
+réceptions, renouvellements, retenues, calendrier et alertes), facturation,
+charges, trésorerie et associés. Les modules de répartition indirecte,
+immobilisations, résultat annuel, distribution et reporting sont annoncés comme
+« à venir ».
 
 ## Pile technique
 
@@ -24,7 +25,7 @@ résultat annuel, distribution et reporting sont annoncés comme « à venir ».
 | ORM | Doctrine ORM 3 + Migrations | Schéma versionné et reproductible |
 | Front | Twig + CSS maison, JavaScript léger | Interface française responsive, sans dépendance lourde |
 | Auth | Symfony Security (form login) | Rôles et permissions granulaires en base |
-| Exports | PDF / XLSX | Prévus en phase 6 (non livrés à ce stade) |
+| Exports | XLSX livré, PDF à venir | Exports Excel et impression disponibles ; génération PDF prévue en phase 6 |
 | Conteneurisation | Docker Compose | Environnements dev, recette et production identiques |
 
 ## Démarrage
@@ -69,7 +70,7 @@ Comptes de démonstration créés par `app:demo:seed` (mot de passe `Demo1234!`)
 | `commercial` | Responsable commercial |
 | `chefprojet` | Chef de projet |
 
-Le jeu de démonstration comprend 48 permissions, 5 rôles, 5 utilisateurs,
+Le jeu de démonstration comprend 53 permissions, 5 rôles, 5 utilisateurs,
 5 types de projet, les exercices 2025 (clôturé) et 2026 (ouvert), 4 clients,
 3 fournisseurs, 5 projets et leurs jalons, 3 contrats avec leurs échéances,
 2 contrats de maintenance, des factures, charges, comptes bancaires et
@@ -87,7 +88,7 @@ docker compose exec -u application php php bin/phpunit tests/Service/MoneyTest.p
 docker compose exec -u application php php bin/phpunit --filter testIndirectAllocation
 ```
 
-Résultat attendu : **OK (41 tests, 189 assertions)**.
+Résultat attendu : **OK (95 tests, 477 assertions)**.
 
 Les tests fonctionnels s'exécutent dans une transaction PostgreSQL annulée à la
 fin de chaque test : la base de test reste propre entre deux exécutions. Après

@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau prospect{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_prospect_index') }}">Prospects</a> / Nouveau{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Nouveau prospect</h1>
+            <div class="page-head__subtitle">
+                La référence <span class="mono">{{ form.vars.data.reference }}</span> a été réservée automatiquement.
+                Les champs marqués d’un astérisque sont obligatoires.
+            </div>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% include 'prospect/_form.html.twig' %}
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Créer le prospect</button>
+            <a class="btn btn--ghost" href="{{ path('app_prospect_index') }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

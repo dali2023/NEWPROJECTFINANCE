@@ -126,6 +126,7 @@ final class ExportPrintTest extends DatabaseTestCase
         $user = $this->createUser('ROLE_LIST_'.strtoupper(substr(md5($route), 0, 8)), [
             'client.view',
             'supplier.view',
+            'prospect.view',
             'project.view_all',
             'contract.view_all',
             'invoice.view',
@@ -158,6 +159,7 @@ final class ExportPrintTest extends DatabaseTestCase
     {
         yield 'clients' => ['/clients', true];
         yield 'fournisseurs' => ['/fournisseurs', true];
+        yield 'prospects' => ['/prospects', true];
         yield 'projets' => ['/projets', true];
         yield 'contrats' => ['/contrats', true];
         yield 'facturation contrats' => ['/contrats/facturation', true];
@@ -181,6 +183,7 @@ final class ExportPrintTest extends DatabaseTestCase
     {
         yield 'clients' => ['/clients/export', ['client.view']];
         yield 'fournisseurs' => ['/fournisseurs/export', ['supplier.view']];
+        yield 'prospects' => ['/prospects/export', ['prospect.view']];
         yield 'projets' => ['/projets/export', ['project.view_all']];
         yield 'contrats' => ['/contrats/export', ['contract.view_all']];
         yield 'facturation contrats' => ['/contrats/facturation/export', ['contract.view_all']];

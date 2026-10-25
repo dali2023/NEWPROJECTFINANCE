@@ -1,9 +1,10 @@
 # État d'avancement — ONE ERP Finance & Project Control
 
-**Dernière mise à jour :** 22 octobre 2026  
+**Dernière mise à jour :** 25 octobre 2026  
 **Périmètre livré :** socle et sécurité, référentiels, projets, module 15
-(contrats et maintenance), facturation, charges, trésorerie et associés  
-**Version applicative :** 1.1.0
+(contrats et maintenance), facturation, charges, trésorerie, associés et
+prospects  
+**Version applicative :** 1.2.0
 
 ## 1. Synthèse
 
@@ -20,19 +21,24 @@ Les modules financiers facturation, charges, trésorerie et associés sont
 également livrés, avec montants exacts en `bcmath`, rattachement des mouvements
 de trésorerie aux documents et contrôles de séparation des tâches.
 
+Le module Prospects est livré : fiches commerciales distinctes des clients,
+import Excel/CSV en deux étapes avec correspondance explicite des colonnes,
+détection et mise à jour des doublons, puis conversion transactionnelle en
+client, projet au statut **Opportunité** et contrat **Brouillon**.
+
 Les modules de répartition indirecte, immobilisations, résultat annuel et
 distribution restent à développer ; l'export PDF reste également à livrer,
 les exports Excel et l'impression étant disponibles.
 
 | Indicateur | Valeur |
 |---|---|
-| Tests automatisés | **88 tests, 368 assertions — OK** |
+| Tests automatisés | **95 tests, 477 assertions — OK** |
 | Contrôle du conteneur Symfony | `lint:container` OK |
-| Syntaxe Twig | 72 fichiers valides |
+| Syntaxe Twig | 81 fichiers valides |
 | Schéma Doctrine | `doctrine:schema:validate` OK |
-| Migrations | 3 migrations appliquées (dev et test) |
-| Permissions | 49 permissions, 5 rôles par défaut |
-| Couverture livrée | socle, module 15, facturation, charges, trésorerie, associés |
+| Migrations | 4 migrations appliquées (dev et test) |
+| Permissions | 53 permissions, 5 rôles par défaut |
+| Couverture livrée | socle, module 15, facturation, charges, trésorerie, associés, prospects |
 
 ## 2. Fonctionnalités livrées
 
@@ -41,7 +47,7 @@ les exports Excel et l'impression étant disponibles.
 - Connexion par identifiant **ou** adresse électronique, déconnexion.
 - Comptes utilisateurs : création, modification, activation/désactivation,
   réinitialisation du mot de passe par un administrateur.
-- Rôles système et permissions unitaires stockés en base (49 permissions,
+- Rôles système et permissions unitaires stockés en base (53 permissions,
   5 rôles par défaut).
 - Contrôle des permissions **côté serveur** (voters Symfony), et non seulement
   masquage des boutons.
@@ -147,19 +153,19 @@ les exports Excel et l'impression étant disponibles.
 
 - Environnement Docker Compose reproductible (PHP-FPM, Nginx, PostgreSQL,
   Mailpit, Adminer optionnel).
-- Jeu de démonstration idempotent `app:demo:seed` : 49 permissions, 5 rôles,
+- Jeu de démonstration idempotent `app:demo:seed` : 53 permissions, 5 rôles,
   5 utilisateurs, référentiels, projets, contrats, opérations de maintenance,
   factures, charges, comptes et opérations d'associés.
-- Trois migrations appliquées en développement et en test.
+- Quatre migrations appliquées en développement et en test.
 - Tests isolés par transaction PostgreSQL, sans réinitialisation manuelle de la
   base entre deux exécutions.
 
 ### 2.9. Exports et impression
 
 - Export Excel (`.xlsx`, PhpSpreadsheet) sur toutes les listes : clients,
-  fournisseurs, projets, contrats, facturation à réaliser, alertes, factures,
-  charges, trésorerie, associés, utilisateurs, rôles, exercices, types de projet
-  et journal d'audit.
+  fournisseurs, prospects, projets, contrats, facturation à réaliser, alertes,
+  factures, charges, trésorerie, associés, utilisateurs, rôles, exercices, types
+  de projet et journal d'audit.
 - Les exports reprennent les filtres actifs et le périmètre de droits de
   l'utilisateur (projets et contrats limités à son périmètre).
 - Classeur structuré : titre, contexte et date, en-têtes figés et filtrables,
@@ -187,6 +193,32 @@ les exports Excel et l'impression étant disponibles.
   trois fois ; une nouvelle configuration active remet le compteur à zéro.
 - Guide dédié : [`09-parametrage-societe-email.md`](09-parametrage-societe-email.md).
 
+### 2.11. Prospects
+
+- Fiche prospect autonome : raison sociale, contact, coordonnées, identifiant
+  fiscal, source, statut, responsable, montant estimé HT, probabilité, date de
+  conclusion prévue, prochaine action et commentaires. Référence `PRO-*`
+  générée automatiquement, suppression logique et journal d'audit.
+- Cycle de vie : **Nouveau**, **Qualifié**, **En discussion**, **Gagné — à
+  convertir**, **Converti**, **Perdu**. Un prospect perdu ou converti ne peut
+  plus être modifié.
+- Import Excel/CSV en deux étapes : dépôt et analyse, puis correspondance
+  explicite des colonnes avec les champs. Aperçu des trois premières lignes,
+  limites de 10 Mo et 5 000 lignes, stockage temporaire privé.
+- Doublons mis à jour, jamais dupliqués : email en priorité, puis raison sociale
+  + ville. Les champs vides du fichier ne remplacent pas les valeurs existantes ;
+  les prospects déjà convertis sont ignorés. Les lignes invalides sont signalées
+  avec leur numéro et leur motif, les lignes valides étant enregistrées dans une
+  transaction unique.
+- Conversion transactionnelle : création d'un client, d'un projet au statut
+  **Opportunité** et d'un contrat **Brouillon**, avec verrou pessimiste contre
+  les conversions concurrentes. Les trois références sont uniques et les liens
+  restent visibles sur la fiche prospect.
+- Permissions dédiées : `prospect.view`, `prospect.manage`, `prospect.import` et
+  `prospect.convert` ; la conversion vérifie en plus `client.manage`,
+  `project.manage` et `contract.manage`.
+- Export Excel et impression de la liste ; guide utilisateur complété.
+
 ## 3. Décisions techniques
 
 | Sujet | Décision | Motif |
@@ -211,7 +243,7 @@ docker compose exec -u application php php bin/phpunit
 Résultat attendu :
 
 ```
-OK (88 tests, 368 assertions)
+OK (95 tests, 477 assertions)
 ```
 
 Les tests couvrent notamment :
@@ -230,11 +262,14 @@ Les tests couvrent notamment :
 - l'approbation et le paiement partiel d'une charge ;
 - la validation et le règlement d'une opération d'associé ;
 - la génération d'un classeur Excel valide (en-têtes, totaux, formats) et la
-  disponibilité des quinze routes d'export ;
+  disponibilité des seize routes d'export ;
 - la présence des actions d'export et d'impression sur les écrans ;
 - le paramétrage société avec logo, le chiffrement et la conservation du mot de
   passe SMTP, les modes de chiffrement du transport, l'email de test, le refus
-  d'envoi lorsque les emails sont désactivés et le rendu des emails de rappel.
+  d'envoi lorsque les emails sont désactivés et le rendu des emails de rappel ;
+- les prospects : création et modification, import avec correspondance explicite,
+  mise à jour des doublons par email puis nom + ville, lignes invalides,
+  conversion transactionnelle en client/projet/contrat et permissions serveur.
 
 Le détail des scénarios figure dans [`04-recette.md`](04-recette.md).
 
@@ -284,3 +319,4 @@ Le détail des scénarios figure dans [`04-recette.md`](04-recette.md).
 | 22/10/2026 | Calendrier contractuel : agenda par jour et vue mensuelle navigable, jalons inclus. |
 | 22/10/2026 | Exports Excel sur toutes les listes et impression de tous les écrans, avec prise en compte des filtres et du périmètre de droits. |
 | 22/10/2026 | Paramétrage société (identité, logo, coordonnées), paramètres SMTP chiffrés, email de test et envoi planifié des rappels contractuels. |
+| 25/10/2026 | Prospects : fiches autonomes, import Excel/CSV avec mapping explicite, doublons, conversion transactionnelle en client/projet/contrat, permissions et documentation. |

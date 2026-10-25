@@ -1,7 +1,7 @@
 # Guide d'utilisation
 
 **Application :** ONE ERP Finance & Project Control  
-**Version :** 1.1 — socle, module 15 et finances  
+**Version :** 1.2 — socle, module 15, finances et prospects  
 **Public :** administrateurs, direction, responsables financiers, commerciaux et
 chefs de projet
 
@@ -29,7 +29,7 @@ depuis la fiche utilisateur. Toute connexion est journalisée.
 Le bandeau latéral regroupe :
 
 - **Pilotage** : tableau de bord.
-- **Projets et tiers** : projets, clients, fournisseurs.
+- **Projets et tiers** : projets, prospects, clients, fournisseurs.
 - **Contrats** : registre des contrats, calendrier, facturation à réaliser,
   notifications.
 - **Finance** : factures, charges, trésorerie, associés.
@@ -53,14 +53,67 @@ Les indicateurs de facturation, d'encaissement, de charges et de trésorerie
 reposent sur les données des modules livrés. Les indicateurs de résultat,
 distribution et reporting restent à activer avec les phases suivantes.
 
-## 4. Gérer les clients
+## 4. Gérer les prospects
 
-### 4.1. Consulter et rechercher
+Les prospects sont des fiches commerciales distinctes des clients. Ils peuvent
+être suivis et importés sans créer de client tant que la relation n'est pas
+concrétisée. Le prospect converti conserve les liens vers les fiches créées.
+
+### 4.1. Consulter et suivre
+
+Menu **Prospects** : la liste présente la référence, le nom, le contact, la
+ville, la source, le statut, le responsable, le montant estimé et la prochaine
+action. Les filtres portent sur la recherche libre, le statut, le responsable et
+la source. L'export Excel reprend les filtres affichés.
+
+Un prospect peut être créé manuellement avec **Nouveau prospect**. Renseignez
+les coordonnées, la qualification commerciale (source, montant, probabilité,
+date de conclusion prévue) et la prochaine action. Les statuts disponibles sont
+**Nouveau**, **Qualifié**, **En discussion**, **Gagné — à convertir** et
+**Perdu**. Le statut **Converti** est posé automatiquement.
+
+### 4.2. Importer une liste Excel
+
+1. Menu **Prospects** → **Importer Excel**.
+2. Déposer un fichier `.xlsx`, `.xls` ou `.csv` (10 Mo maximum, 5 000 lignes de
+   données). La première ligne doit contenir les en-têtes.
+3. Vérifier l'aperçu puis associer explicitement chaque champ à une colonne.
+   Seule la raison sociale est obligatoire ; les autres champs peuvent être
+   ignorés. Chaque colonne ne peut servir qu'à un seul champ.
+4. Lancer l'import et consulter le résultat.
+
+Les doublons sont **mis à jour**, jamais dupliqués : l'adresse électronique est
+la clé prioritaire, sinon la raison sociale et la ville. Un champ vide dans le
+fichier ne remplace pas une valeur déjà présente. Les prospects déjà convertis
+sont ignorés pour ne pas modifier les fiches client, projet ou contrat. Les
+lignes invalides sont signalées par leur numéro Excel avec le motif (email
+invalide, montant incorrect, statut inconnu, etc.) ; les autres lignes sont
+enregistrées dans une transaction unique. L'import produit une ligne de journal
+d'audit avec le nombre de créations, de mises à jour et de lignes ignorées.
+
+### 4.3. Convertir un prospect
+
+1. Ouvrir la fiche du prospect (statut autre que **Perdu**).
+2. Cliquer sur **Convertir**.
+3. Choisir le type de client, le délai de paiement, le type de projet, le
+   responsable, l'intitulé du projet et du contrat, le montant HT, la TVA et la
+   devise.
+4. Valider : un client, un projet au statut **Opportunité** et un contrat
+   **Brouillon** sont créés en une seule transaction. Le prospect passe à
+   **Converti** et affiche les liens vers les trois fiches.
+
+La conversion exige les permissions `prospect.convert`, `client.manage`,
+`project.manage` et `contract.manage`. En cas d'erreur, aucune des trois fiches
+n'est créée. Un prospect perdu doit d'abord être requalifié.
+
+## 5. Gérer les clients
+
+### 5.1. Consulter et rechercher
 
 Menu **Clients** : la liste affiche le code, le nom, le type, le contact, la
 ville et le statut. Utilisez la recherche et les filtres, puis **Filtrer**.
 
-### 4.2. Créer un client
+### 5.2. Créer un client
 
 1. Cliquer sur **Nouveau client**.
 2. Renseigner le code (unique), le nom, le type (entreprise, organisme public,
@@ -70,20 +123,20 @@ ville et le statut. Utilisez la recherche et les filtres, puis **Filtrer**.
 Le client est actif par défaut. Il peut être désactivé depuis sa fiche ; les
 projets existants restent consultables.
 
-### 4.3. Modifier
+### 5.3. Modifier
 
 Ouvrir la fiche puis **Modifier**. Toute modification est journalisée.
 
-## 5. Gérer les fournisseurs
+## 6. Gérer les fournisseurs
 
 Menu **Fournisseurs** : création et modification sur le même principe. La
 catégorie de prestation permet de regrouper les achats (informatique, conseil,
 comptabilité, etc.). Les fournisseurs inactifs ne sont plus proposés dans les
 nouveaux documents.
 
-## 6. Gérer les projets
+## 7. Gérer les projets
 
-### 6.1. Liste des projets
+### 7.1. Liste des projets
 
 La liste présente la référence, le nom, le client, le type, le responsable, le
 montant contractuel, le budget, le statut et les actions.
@@ -92,7 +145,7 @@ Filtres disponibles : recherche libre, statut, client, type, responsable. Un
 utilisateur qui ne dispose que de `project.view_own` ne voit que les projets
 dont il est responsable ou membre.
 
-### 6.2. Créer un projet
+### 7.2. Créer un projet
 
 1. Menu **Projets** → **Nouveau projet**.
 2. **Identification** : intitulé, client, type, responsable, statut.
@@ -108,7 +161,7 @@ dont il est responsable ou membre.
 La référence `PRJ-AAAA-NNNN` est générée automatiquement et ne doit pas être
 modifiée. La TVA et le TTC sont recalculés à l'enregistrement, au millime.
 
-### 6.3. Statuts et validation contractuelle
+### 7.3. Statuts et validation contractuelle
 
 | Statut | Usage |
 |---|---|
@@ -127,7 +180,7 @@ Le passage au statut **Gagné / contrat signé** (ou au-delà) exige la permissi
 aucune donnée n'est enregistrée. Les statuts « Opportunité », « Brouillon » et
 « En préparation commerciale » ne comptent pas dans les contrats signés.
 
-### 6.4. Fiche projet
+### 7.4. Fiche projet
 
 Les onglets disponibles :
 
@@ -143,9 +196,9 @@ Les onglets disponibles :
 Les actions **Modifier** et **Clôturer** dépendent de vos permissions et du
 statut du projet. Un projet clôturé n'est plus modifiable.
 
-## 7. Contrats, facturation, charges, trésorerie et associés
+## 8. Contrats, facturation, charges, trésorerie et associés
 
-### 7.1. Registre et fiche contrat
+### 8.1. Registre et fiche contrat
 
 Menu **Contrats** : la liste présente la référence, le client, le projet, la
 période, le montant, le statut et le reste à facturer. Utilisez la recherche et
@@ -168,7 +221,7 @@ La fiche contient neuf onglets :
 Les boutons **Modifier**, **Renouveler**, **Alertes** et les actions d'onglet
 sont affichés selon vos permissions et le statut du contrat.
 
-### 7.2. Échéances et facturation
+### 8.2. Échéances et facturation
 
 Une échéance possède deux statuts distincts :
 
@@ -181,7 +234,7 @@ Une échéance ne devient **facturée** qu'après validation de la facture. Le m
 bloquées. Le bouton de création de facture n'est proposé que pour une échéance
 prête ou partiellement facturée.
 
-### 7.3. Maintenance, réceptions et renouvellement
+### 8.3. Maintenance, réceptions et renouvellement
 
 - **Maintenance** : créer un contrat de maintenance avec sa périodicité, ses
   dates et son montant. L'action **Générer les échéances** produit les périodes
@@ -197,7 +250,7 @@ prête ou partiellement facturée.
 - **Retenues** : enregistrer le montant et la date d'éligibilité, puis libérer
   tout ou partie. Le reste à libérer est recalculé.
 
-### 7.4. Calendrier et alertes
+### 8.4. Calendrier et alertes
 
 Menu **Contrats → Calendrier** : échéances contractuelles, expirations,
 réceptions, fins de garantie, jalons et renouvellements sur un horizon
@@ -222,7 +275,7 @@ paramétrés. Une alerte peut être prise en charge, résolue ou classée sans o
 La génération est idempotente : relancer l'action ne crée pas de doublon. Voir
 [`08-parametrage-alertes.md`](08-parametrage-alertes.md).
 
-### 7.5. Factures
+### 8.5. Factures
 
 Menu **Factures** :
 
@@ -238,7 +291,7 @@ Menu **Factures** :
 
 Une facture brouillon ou annulée ne peut pas être encaissée.
 
-### 7.6. Charges, trésorerie et associés
+### 8.6. Charges, trésorerie et associés
 
 - **Charges** : créer une dépense, la soumettre, puis l'approuver avec un autre
   utilisateur. L'auteur ne peut jamais approuver sa propre dépense. Le paiement
@@ -252,9 +305,9 @@ Une facture brouillon ou annulée ne peut pas être encaissée.
   peut pas être réglée ; le règlement crée le mouvement de trésorerie
   correspondant.
 
-## 8. Administrer
+## 9. Administrer
 
-### 8.1. Exercices financiers
+### 9.1. Exercices financiers
 
 Menu **Administration → Exercices**.
 
@@ -264,12 +317,12 @@ Menu **Administration → Exercices**.
 - **Réouvrir** un exercice clôturé : permission dédiée et motif d'au moins
   10 caractères obligatoires. L'opération est journalisée.
 
-### 8.2. Types de projet
+### 9.2. Types de projet
 
 Créer, renommer, ordonner ou désactiver les types proposés dans les fiches
 projet. Un type utilisé par un projet existant ne doit pas être supprimé.
 
-### 8.3. Utilisateurs
+### 9.3. Utilisateurs
 
 Menu **Administration → Utilisateurs**.
 
@@ -280,7 +333,7 @@ Menu **Administration → Utilisateurs**.
 
 Le mot de passe doit contenir au moins 8 caractères. Il n'est jamais affiché.
 
-### 8.4. Rôles et permissions
+### 9.4. Rôles et permissions
 
 Menu **Administration → Rôles**. La matrice présente les permissions par module.
 Cocher ou décocher puis **Enregistrer les permissions**. Toute modification est
@@ -290,7 +343,7 @@ L'administrateur technique dispose d'un accès global, mais les règles de
 séparation des tâches restent appliquées : il ne peut pas, par défaut, valider
 les opérations financières à la place des responsables.
 
-### 8.5. Journal d'audit
+### 9.5. Journal d'audit
 
 Menu **Administration → Audit**. Filtrez par utilisateur, action, entité,
 module, résultat ou période. Chaque ligne indique l'auteur, l'action,
@@ -298,7 +351,7 @@ l'horodatage, l'adresse IP et, le cas échéant, les valeurs avant/après.
 
 Les refus d'accès apparaissent avec l'action `deny` et le résultat `denied`.
 
-### 8.6. Société et paramètres email
+### 9.6. Société et paramètres email
 
 Deux écrans distincts, réservés à la permission `admin.settings` :
 
@@ -333,7 +386,7 @@ compteur à zéro.
 Le détail des champs, du chiffrement, de la planification et du dépannage figure
 dans [`09-parametrage-societe-email.md`](09-parametrage-societe-email.md).
 
-## 9. Exporter et imprimer
+## 10. Exporter et imprimer
 
 Chaque Ǹcran de liste (clients, fournisseurs, projets, contrats, facturation,
 alertes, factures, charges, trǸsorerie, associǸs, utilisateurs, r��les,
@@ -345,7 +398,7 @@ exercices, types de projet, audit) propose deux actions en haut �� droite :
   **Imprimer** du bandeau supǸrieur est Ǹgalement disponible sur les fiches
   dǸtaillǸes.
 
-### 9.1. Contenu d'un export Excel
+### 10.1. Contenu d'un export Excel
 
 Le classeur reprend le titre de l'Ǹcran, les filtres actifs et la date
 d'Ǹdition. La ligne de titres est figǸe et filtrable, les colonnes sont
@@ -359,7 +412,7 @@ utilisateur limitǸ �� ses propres projets ou contrats n'exporte que ceux-ci
 Les listes sont plafonnǸes �� 10 000 lignes par export ; affinez les filtres
 pour les grands volumes.
 
-### 9.2. Rendu de l'impression
+### 10.2. Rendu de l'impression
 
 L'impression masque la navigation, les filtres et les boutons d'action. Les
 tableaux conservent leur en-tǦte sur chaque page, les lignes ne sont pas
@@ -367,7 +420,7 @@ coupǸes et la mise en page est calibrǸe pour du A4. Pour les exports Excel, la
 mise en page du classeur est Ǹgalement prǸparǸe (A4, paysage au-del�� de six
 colonnes, ajustement �� la largeur, en-tǦte rǸpǸtǸ).
 
-## 10. Bonnes pratiques
+## 11. Bonnes pratiques
 
 - Vérifier le client et le type avant de créer un projet.
 - Ne pas utiliser le champ « commentaires » pour des données sensibles : le
@@ -380,7 +433,7 @@ colonnes, ajustement �� la largeur, en-tǦte rǸpǸtǸ).
 - Clôturer l'exercice après validation des opérations de l'année.
 - Signaler immédiatement toute anomalie de montant ou d'accès.
 
-## 11. Montants et arrondis
+## 12. Montants et arrondis
 
 - Les montants sont stockés en décimal exact (échelle 3, soit le millime).
 - Le taux de TVA est saisi en pourcentage (ex. `19`).
@@ -390,7 +443,7 @@ colonnes, ajustement �� la largeur, en-tǦte rǸpǸtǸ).
 En cas d'écart apparent, vérifier la saisie du taux et des montants HT avant de
 contacter le support.
 
-## 12. Problèmes fréquents
+## 13. Problèmes fréquents
 
 | Symptôme | Cause probable | Action |
 |---|---|---|
@@ -405,7 +458,7 @@ contacter le support.
 | Règlement d'associé refusé | Opération non validée | Valider l'opération avant le règlement |
 | Aucune alerte générée | Dates ou responsable absents, ou délai non atteint | Compléter la fiche et vérifier le paramétrage |
 
-## 13. Support
+## 14. Support
 
 Fournir au support : l'identifiant utilisé, l'écran concerné, l'heure, le
 message exact et, si possible, la référence du projet ou du client. Les

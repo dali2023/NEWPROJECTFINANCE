@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier {{ prospect.name }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_prospect_index') }}">Prospects</a> / <a href="{{ path('app_prospect_show', {id: prospect.idString}) }}">{{ prospect.reference }}</a> / Modifier{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Modifier le prospect</h1>
+            <div class="page-head__subtitle">
+                <span class="mono">{{ prospect.reference }}</span> · {{ prospect.name }}
+                <span class="badge {{ prospect.status.badgeClass }}">{{ prospect.status.label }}</span>
+            </div>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% include 'prospect/_form.html.twig' %}
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Enregistrer les modifications</button>
+            <a class="btn btn--ghost" href="{{ path('app_prospect_show', {id: prospect.idString}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

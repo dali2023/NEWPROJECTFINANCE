@@ -43,6 +43,11 @@ services:
         arguments:
             $timezone: '%app.timezone%'
 
+    # Fichiers d'import de prospects : dépôt privé, nettoyé après traitement.
+    App\Service\ProspectImportService:
+        arguments:
+            $importDir: '%kernel.project_dir%/var/imports'
+
     App\Service\ContractAlertConfig:
         arguments:
             $delays: '%app.contract_alerts%'

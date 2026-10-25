@@ -1,0 +1,90 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Associer les colonnes{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_prospect_index') }}">Prospects</a> / <a href="{{ path('app_prospect_import_upload') }}">Importer</a> / Colonnes{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Associer les colonnes</h1>
+            <div class="page-head__subtitle">
+                Étape 2 sur 2 — {{ preview.filename }} · {{ preview.totalRows }} ligne{{ preview.totalRows > 1 ? 's' : '' }} de données
+            </div>
+        </div>
+    </div>
+
+    <section class="card">
+        <div class="card__header">
+            <div class="card__title">Aperçu du fichier</div>
+            <div class="muted" style="font-size:.8rem;">Les trois premières lignes de données, avant transformation.</div>
+        </div>
+        <div class="card__body">
+            <div class="table-wrap">
+                <table class="table table--compact">
+                    <thead>
+                    <tr>
+                        {% for column in preview.columns %}<th>{{ column }}</th>{% endfor %}
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in preview.sampleRows %}
+                        <tr>
+                            {% for index, column in preview.columns %}
+                                <td>{{ row[index] ?? '' }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="help" style="margin-top:.75rem;">
+                Les colonnes sans en-tête restent utilisables : elles sont repérées par leur lettre Excel.
+            </div>
+        </div>
+    </section>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}
+            <div class="alert alert--error" role="alert" style="margin:1rem 0;">{{ form_errors(form) }}</div>
+        {% endif %}
+
+        <section class="card" style="margin-top:1rem;">
+            <div class="card__header"><div class="card__title">Correspondance des colonnes</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.name) }}
+                    {{ form_row(form.contactName) }}
+                    {{ form_row(form.email) }}
+                    {{ form_row(form.phone) }}
+                    {{ form_row(form.taxIdentifier) }}
+                    {{ form_row(form.address) }}
+                    {{ form_row(form.city) }}
+                    {{ form_row(form.postalCode) }}
+                    {{ form_row(form.country) }}
+                    {{ form_row(form.source) }}
+                    {{ form_row(form.status) }}
+                    {{ form_row(form.estimatedAmountHt) }}
+                    {{ form_row(form.probability) }}
+                    {{ form_row(form.expectedCloseDate) }}
+                    {{ form_row(form.nextAction) }}
+                    {{ form_row(form.nextActionDate) }}
+                    {{ form_row(form.notes) }}
+                </div>
+                <div class="help">
+                    Chaque colonne ne peut être associée qu’à un seul champ. Laissez « — Ignorer — » pour ne pas importer
+                    une colonne. Les champs vides du fichier ne remplacent jamais une valeur déjà présente en base.
+                </div>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Importer les lignes</button>
+            <a class="btn btn--ghost" href="{{ path('app_prospect_index') }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+
+    <form method="post" action="{{ path('app_prospect_import_cancel', {token: token}) }}" data-confirm="Annuler cet import et supprimer le fichier temporaire ?" style="margin-top:.75rem;">
+        <input type="hidden" name="_token" value="{{ csrf_token('prospect_import_cancel_' ~ token) }}">
+        <button class="btn btn--danger btn--sm" type="submit">Supprimer ce fichier temporaire</button>
+    </form>
+{% endblock %}

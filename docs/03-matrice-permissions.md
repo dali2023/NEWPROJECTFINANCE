@@ -32,6 +32,10 @@ sans redéploiement.
 | `fiscal_year.reopen` | Réouvrir un exercice clôturé (sensible) |
 | `client.view` / `client.manage` | Consulter / gérer les clients |
 | `supplier.view` / `supplier.manage` | Consulter / gérer les fournisseurs |
+| `prospect.view` | Consulter les prospects |
+| `prospect.manage` | Créer et modifier un prospect |
+| `prospect.import` | Importer des prospects depuis Excel ou CSV |
+| `prospect.convert` | Convertir un prospect en client, projet et contrat brouillon |
 | `project.view_all` | Consulter tous les projets |
 | `project.view_own` | Consulter les projets dont on est responsable |
 | `project.manage` | Créer et modifier un projet |
@@ -69,6 +73,8 @@ sans redéploiement.
 | `fiscal_year.close` | – | ✓ | ✓ | – | – |
 | `fiscal_year.reopen` | ✓ | – | – | – | – |
 | `client.*`, `supplier.*` | ✓ | vue | vue | ✓ | – |
+| `prospect.view` | ✓ | ✓ | ✓ | ✓ | – |
+| `prospect.manage`, `prospect.import`, `prospect.convert` | ✓ | – | – | ✓ | – |
 | `project.view_all` | ✓ | ✓ | ✓ | ✓ | – |
 | `project.view_own` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `project.manage` | – | – | – | ✓ | – |
@@ -126,3 +132,7 @@ sans redéploiement.
 10. **Paramètres sensibles** : `admin.settings` donne accès aux coordonnées de
     la société et au mot de passe SMTP. Le mot de passe est chiffré, jamais
     réaffiché, et son changement est journalisé sans sa valeur.
+11. **Conversion d'un prospect** : l'opération exige `prospect.convert`,
+    `client.manage`, `project.manage` et `contract.manage`. Elle crée les trois
+    fiches dans une transaction unique et journalise chaque création ainsi que
+    la conversion. Le prospect converti ne peut plus être modifié.

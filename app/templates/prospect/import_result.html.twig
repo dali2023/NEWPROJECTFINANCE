@@ -1,0 +1,69 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Résultat de l’import{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_prospect_index') }}">Prospects</a> / <a href="{{ path('app_prospect_import_upload') }}">Importer</a> / Résultat{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Résultat de l’import</h1>
+            <div class="page-head__subtitle">Les lignes valides ont été enregistrées dans une transaction unique.</div>
+        </div>
+        <div class="page-head__actions">
+            {% if can('prospect.import') %}
+                <a class="btn" href="{{ path('app_prospect_import_upload') }}">Importer un autre fichier</a>
+            {% endif %}
+            <a class="btn btn--primary" href="{{ path('app_prospect_index') }}">Voir les prospects</a>
+        </div>
+    </div>
+
+    <div class="grid grid--2" style="margin-bottom:1rem;">
+        <section class="card">
+            <div class="card__header"><div class="card__title">Synthèse</div></div>
+            <div class="card__body">
+                <dl class="definition">
+                    <dt>Prospects créés</dt><dd>{{ result.created }}</dd>
+                    <dt>Prospects mis à jour</dt><dd>{{ result.updated }}</dd>
+                    <dt>Lignes ignorées</dt><dd>{{ result.skipped }}</dd>
+                    <dt>Total traité</dt><dd>{{ result.importedCount + result.skipped }}</dd>
+                </dl>
+            </div>
+        </section>
+        <section class="card">
+            <div class="card__header"><div class="card__title">Statut</div></div>
+            <div class="card__body">
+                {% if not result.hasErrors %}
+                    <div class="alert alert--success" role="alert" style="margin:0;">
+                        Import terminé sans erreur. Les doublons ont été mis à jour, pas dupliqués.
+                    </div>
+                {% else %}
+                    <div class="alert alert--warning" role="alert" style="margin:0;">
+                        Import partiel : les lignes valides ont été enregistrées, les lignes ci-dessous ont été ignorées.
+                        Corrigez le fichier puis importez-le à nouveau si nécessaire — les doublons seront mis à jour.
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+
+    {% if result.hasErrors %}
+        <section class="card">
+            <div class="card__header"><div class="card__title">Lignes ignorées ({{ result.errors|length }})</div></div>
+            <div class="card__body">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead><tr><th>Ligne Excel</th><th>Motif</th></tr></thead>
+                        <tbody>
+                        {% for error in result.errors %}
+                            <tr>
+                                <td class="mono">{{ error.row }}</td>
+                                <td>{{ error.message }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    {% endif %}
+{% endblock %}

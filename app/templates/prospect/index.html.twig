@@ -1,0 +1,122 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Prospects{% endblock %}
+{% block breadcrumb %}Tiers / Prospects{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Prospects</h1>
+            <div class="page-head__subtitle">{{ result.total }} fiche{{ result.total > 1 ? 's' : '' }} prospect</div>
+        </div>
+        <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' with {export_path: path('app_prospect_export', app.request.query.all)} %}
+            {% if can('prospect.import') %}
+                <a class="btn" href="{{ path('app_prospect_import_upload') }}">Importer Excel</a>
+            {% endif %}
+            {% if can('prospect.manage') %}
+                <a class="btn btn--primary" href="{{ path('app_prospect_new') }}">Nouveau prospect</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <section class="card">
+        <form method="get" action="{{ path('app_prospect_index') }}" class="toolbar">
+            <div class="field">
+                <label for="q">Recherche</label>
+                <input type="text" id="q" name="q" value="{{ filters.term }}" placeholder="Nom, référence, email, ville">
+            </div>
+            <div class="field">
+                <label for="statut">Statut</label>
+                <select id="statut" name="statut" data-auto-submit>
+                    <option value="">Tous les statuts</option>
+                    {% for status in statuses %}
+                        <option value="{{ status.value }}" {{ filters.status and filters.status.value == status.value ? 'selected' }}>{{ status.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="responsable">Responsable</label>
+                <select id="responsable" name="responsable" data-auto-submit>
+                    <option value="">Tous les responsables</option>
+                    {% for owner in owners %}
+                        <option value="{{ owner.idString }}" {{ filters.owner and filters.owner.idString == owner.idString ? 'selected' }}>{{ owner.fullName }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="source">Source</label>
+                <input type="text" id="source" name="source" value="{{ filters.source }}" placeholder="Salon, web…">
+            </div>
+            <button class="btn" type="submit">Filtrer</button>
+            {% if filters.term or filters.status or filters.owner or filters.source %}
+                <a class="btn btn--ghost" href="{{ path('app_prospect_index') }}">Réinitialiser</a>
+            {% endif %}
+        </form>
+
+        {% if result.items is empty %}
+            <div class="empty">
+                Aucun prospect trouvé.
+                {% if can('prospect.manage') %}
+                    <br><a href="{{ path('app_prospect_new') }}">Créer un prospect</a>
+                {% endif %}
+                {% if can('prospect.import') %}
+                    ou <a href="{{ path('app_prospect_import_upload') }}">importer une liste Excel</a>.
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Référence</th>
+                        <th>Prospect</th>
+                        <th>Contact</th>
+                        <th>Ville</th>
+                        <th>Source</th>
+                        <th>Statut</th>
+                        <th>Responsable</th>
+                        <th class="num">Montant estimé</th>
+                        <th>Prochaine action</th>
+                        <th class="actions"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for prospect in result.items %}
+                        <tr>
+                            <td><span class="mono">{{ prospect.reference }}</span></td>
+                            <td>
+                                <a href="{{ path('app_prospect_show', {id: prospect.idString}) }}">{{ prospect.name }}</a>
+                                {% if prospect.email %}<div class="cell-sub">{{ prospect.email }}</div>{% endif %}
+                            </td>
+                            <td>
+                                {{ prospect.contactName ?: '—' }}
+                                {% if prospect.phone %}<div class="cell-sub">{{ prospect.phone }}</div>{% endif %}
+                            </td>
+                            <td>{{ prospect.city ?: '—' }}</td>
+                            <td>{{ prospect.source ?: '—' }}</td>
+                            <td><span class="badge {{ prospect.status.badgeClass }}">{{ prospect.status.label }}</span></td>
+                            <td>{{ prospect.owner ? prospect.owner.fullName : '—' }}</td>
+                            <td class="num">{{ prospect.estimatedAmountHt|money }}</td>
+                            <td>
+                                {% if prospect.nextActionDate %}
+                                    {{ prospect.nextActionDate|date('d/m/Y') }}
+                                    {% if prospect.nextAction %}<div class="cell-sub">{{ prospect.nextAction }}</div>{% endif %}
+                                {% elseif prospect.nextAction %}
+                                    {{ prospect.nextAction }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="actions">
+                                <a class="btn btn--ghost btn--sm" href="{{ path('app_prospect_show', {id: prospect.idString}) }}">Ouvrir</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'partials/_pagination.html.twig' %}
+        {% endif %}
+    </section>
+{% endblock %}

@@ -238,4 +238,14 @@ class ContractRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function referenceExists(string $reference): bool
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->where('UPPER(c.reference) = :reference')
+            ->setParameter('reference', strtoupper(trim($reference)))
+            ->getQuery()
+            ->getSingleScalarResult() > 0;
+    }
 }

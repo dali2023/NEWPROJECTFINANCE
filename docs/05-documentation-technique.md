@@ -37,7 +37,7 @@ Nginx ne peut pas servir un justificatif directement.
 | `src/Entity/` | Entités Doctrine et traits (`UuidIdTrait`, `TimestampableTrait`, `SoftDeletableTrait`) |
 | `src/Repository/` | Requêtes, filtres et pagination ; trait `PaginatesQueries` |
 | `src/Security/` | `PermissionChecker`, voters `Project`, `Contract`, `FiscalYear`, `Permission` |
-| `src/Service/` | `Money`, `ReferenceGenerator`, `AuditLogger`, `DocumentStorage`, `ContractBillingService`, `ContractNotificationService`, `MaintenanceScheduleService`, `InvoiceService`, `ExpenseService`, `TreasuryService`, `PartnerService`, `Settings\SecretCipher`, `Settings\SettingsProvider`, `Mail\CompanyMailer`, `Mail\ContractReminderMailer` |
+| `src/Service/` | `Money`, `ReferenceGenerator`, `AuditLogger`, `DocumentStorage`, `ProspectImportService`, `ProspectConversionService`, `ContractBillingService`, `ContractNotificationService`, `MaintenanceScheduleService`, `InvoiceService`, `ExpenseService`, `TreasuryService`, `PartnerService`, `Settings\SecretCipher`, `Settings\SettingsProvider`, `Mail\CompanyMailer`, `Mail\ContractReminderMailer` |
 | `src/Form/` | Formulaires et `DecimalTransformer` |
 | `src/EventSubscriber/` | Journalisation des refus d'accès |
 | `src/Enum/` | Statuts et libellés métier |
@@ -82,6 +82,7 @@ La migration `Version20261022021317.php` ajoute les tables suivantes :
 | Charges | `expenses`, `expense_payments` |
 | Trésorerie | `bank_accounts`, `cash_movements` |
 | Associés | `partners`, `partner_transactions` |
+| Prospection | `prospects` (migration `Version20261025131414.php`) |
 
 La migration `Version20261022205916.php` ajoute deux tables de paramétrage
 singleton et complète le suivi des emails :
@@ -145,7 +146,9 @@ Deux niveaux complémentaires :
 
 Les routes sensibles sont protégées par `#[IsGranted]` et les contrôleurs
 revérifient les permissions métier. Le masquage d'un bouton dans Twig n'est
-jamais considéré comme une protection.
+jamais considéré comme une protection. La conversion d'un prospect vérifie
+cumulativement `prospect.convert`, `client.manage`, `project.manage` et
+`contract.manage`.
 
 ### 5.3. CSRF
 
@@ -162,6 +165,13 @@ approbation de charge, renouvellement de contrat, libération de retenue,
 modification de permissions, paramétrage société/email et envoi de rappels.
 `AccessDeniedListener` journalise les refus avec l'action `deny` et le résultat
 `denied`, y compris le chemin demandé.
+
+L'import des prospects stocke le fichier téléversé dans `var/imports` (hors
+`public/`), sous un nom opaque lié à la session. Le jeton est vérifié à chaque
+étape, le fichier est supprimé après import ou annulation, et les fichiers
+expirés (24 h) sont nettoyés lors du téléversement suivant. Les lignes valides
+sont importées dans une transaction unique ; les lignes invalides sont
+retournées avec leur numéro et leur motif.
 
 ### 5.5. Paramètres société et email
 
@@ -237,15 +247,18 @@ docker compose exec -u application php php bin/phpunit
   approbation et règlement d'une opération d'associé.
 - `SpreadsheetExporterTest` : validité du classeur `.xlsx`, en-têtes, totaux et
   formats.
-- `ExportPrintTest` : les quinze routes d'export répondent en `.xlsx` et les
+- `ExportPrintTest` : les seize routes d'export répondent en `.xlsx` et les
   actions d'export/impression sont présentes.
 - `SettingsTest` : droits d'accès, enregistrement société et logo, chiffrement
   et conservation du mot de passe SMTP, modes de chiffrement du DSN, email de
   test, commande et action d'envoi désactivées, rendu des emails de rappel.
 - `SecretCipherTest` : aller-retour de chiffrement, unicité des nonces, rejet
   d'un secret altéré.
+- `ProspectManagementTest` : création/modification d'un prospect, import Excel
+  avec doublons et lignes invalides, mapping explicite des colonnes, conversion
+  transactionnelle et permissions serveur.
 
-Résultat de référence : **88 tests, 368 assertions — OK**.
+Résultat de référence : **95 tests, 477 assertions — OK**.
 
 `DatabaseTestCase` ouvre une transaction PostgreSQL dans `setUp()` et l'annule
 dans `tearDown()`. Le noyau n'est pas redémarré entre les requêtes

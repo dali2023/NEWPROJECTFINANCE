@@ -86,6 +86,10 @@ final class DemoSeedCommand extends Command
         'client.manage' => ['Gérer les clients', 'M03', null],
         'supplier.view' => ['Consulter les fournisseurs', 'M03', null],
         'supplier.manage' => ['Gérer les fournisseurs', 'M03', null],
+        'prospect.view' => ['Consulter les prospects', 'M03', 'Fiches commerciales avant conversion en client.'],
+        'prospect.manage' => ['Créer et modifier un prospect', 'M03', null],
+        'prospect.import' => ['Importer des prospects depuis Excel', 'M03', 'Import avec correspondance explicite des colonnes et mise à jour des doublons.'],
+        'prospect.convert' => ['Convertir un prospect', 'M03', 'Crée un client, un projet et un contrat brouillon.'],
         'project.view_all' => ['Consulter tous les projets', 'M12', null],
         'project.view_own' => ['Consulter ses projets', 'M12', 'Limité aux projets dont l’utilisateur est responsable ou membre.'],
         'project.manage' => ['Créer et modifier un projet', 'M12', null],
@@ -139,6 +143,7 @@ final class DemoSeedCommand extends Command
                 'admin.users', 'admin.referentials', 'admin.allocation_rules', 'admin.audit', 'admin.settings',
                 'fiscal_year.reopen',
                 'client.view', 'client.manage', 'supplier.view', 'supplier.manage',
+                'prospect.view', 'prospect.manage', 'prospect.import', 'prospect.convert',
                 'project.view_all', 'project.view_own',
                 'contract.view_all',
                 'invoice.view', 'receipt.view',
@@ -152,6 +157,7 @@ final class DemoSeedCommand extends Command
             'permissions' => [
                 'fiscal_year.close',
                 'client.view', 'supplier.view',
+                'prospect.view',
                 'project.view_all', 'project.view_own', 'project.validate', 'project.close',
                 'contract.view_all', 'contract.validate', 'contract.renew', 'contract.notify',
                 'invoice.view', 'invoice.cancel', 'receipt.view',
@@ -172,6 +178,7 @@ final class DemoSeedCommand extends Command
             'permissions' => [
                 'fiscal_year.close',
                 'client.view', 'supplier.view',
+                'prospect.view',
                 'project.view_all', 'project.view_own', 'project.close',
                 'contract.view_all', 'contract.bill', 'contract.notify',
                 'invoice.view', 'invoice.manage', 'invoice.cancel',
@@ -192,6 +199,7 @@ final class DemoSeedCommand extends Command
             'description' => 'Tiers, opportunités, appels d’offres, projets et budgets.',
             'permissions' => [
                 'client.view', 'client.manage', 'supplier.view', 'supplier.manage',
+                'prospect.view', 'prospect.manage', 'prospect.import', 'prospect.convert',
                 'project.view_all', 'project.view_own', 'project.manage',
                 'contract.view_all', 'contract.view_own', 'contract.manage', 'contract.renew', 'contract.notify',
                 'invoice.view', 'receipt.view',
@@ -310,6 +318,7 @@ final class DemoSeedCommand extends Command
         $connection->executeStatement('DELETE FROM contracts');
         $connection->executeStatement('DELETE FROM contract_documents');
 
+        $connection->executeStatement('DELETE FROM prospects');
         $connection->executeStatement('DELETE FROM project_milestones');
         $connection->executeStatement('DELETE FROM projects');
         $connection->executeStatement('DELETE FROM user_roles');

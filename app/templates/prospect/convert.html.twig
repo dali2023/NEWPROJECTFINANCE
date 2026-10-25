@@ -1,0 +1,92 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Convertir {{ prospect.name }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_prospect_index') }}">Prospects</a> / <a href="{{ path('app_prospect_show', {id: prospect.idString}) }}">{{ prospect.reference }}</a> / Convertir{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Convertir le prospect</h1>
+            <div class="page-head__subtitle">
+                <span class="mono">{{ prospect.reference }}</span> · {{ prospect.name }}
+                <span class="badge {{ prospect.status.badgeClass }}">{{ prospect.status.label }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert--info" style="margin-bottom:1rem;">
+        La conversion crée en une seule transaction un <strong>client</strong>, un <strong>projet</strong> au statut
+        « Opportunité » et un <strong>contrat brouillon</strong> rattaché aux deux. En cas d’erreur, aucune des trois
+        fiches n’est créée.
+    </div>
+
+    <div class="grid grid--2" style="margin-bottom:1rem;">
+        <section class="card">
+            <div class="card__header"><div class="card__title">Prospect à convertir</div></div>
+            <div class="card__body">
+                <dl class="definition">
+                    <dt>Contact</dt><dd>{{ prospect.contactName ?: '—' }}</dd>
+                    <dt>Email</dt><dd>{{ prospect.email ?: '—' }}</dd>
+                    <dt>Téléphone</dt><dd>{{ prospect.phone ?: '—' }}</dd>
+                    <dt>Ville</dt><dd>{{ prospect.city ?: '—' }}</dd>
+                    <dt>Identifiant fiscal</dt><dd>{{ prospect.taxIdentifier ?: '—' }}</dd>
+                    <dt>Montant estimé HT</dt><dd>{{ prospect.estimatedAmountHt|money }}</dd>
+                </dl>
+            </div>
+        </section>
+        <section class="card">
+            <div class="card__header"><div class="card__title">À savoir</div></div>
+            <div class="card__body">
+                <p>Le client reçoit un code définitif généré automatiquement. Le projet conserve la probabilité du
+                    prospect et reste une opportunité commerciale tant que le contrat n’est pas signé.</p>
+                <p class="muted">Le contrat est créé en brouillon : aucune date de signature ni facturation n’est
+                    enregistrée. Vous pourrez le compléter depuis le module Contrats.</p>
+            </div>
+        </section>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+        {% if form.vars.errors|length > 0 %}
+            <div class="alert alert--error" role="alert" style="margin-bottom:1rem;">{{ form_errors(form) }}</div>
+        {% endif %}
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Client et conditions</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.clientType) }}
+                    {{ form_row(form.paymentTermsDays) }}
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top:1rem;">
+            <div class="card__header"><div class="card__title">Projet</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.projectName) }}
+                    {{ form_row(form.projectType) }}
+                    {{ form_row(form.projectManager) }}
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top:1rem;">
+            <div class="card__header"><div class="card__title">Contrat brouillon</div></div>
+            <div class="card__body">
+                <div class="form-grid">
+                    {{ form_row(form.contractTitle) }}
+                    {{ form_row(form.contractType) }}
+                    {{ form_row(form.contractAmountHt) }}
+                    {{ form_row(form.vatRate) }}
+                    {{ form_row(form.currencyCode) }}
+                </div>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="btn btn--primary" type="submit">Convertir le prospect</button>
+            <a class="btn btn--ghost" href="{{ path('app_prospect_show', {id: prospect.idString}) }}">Annuler</a>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

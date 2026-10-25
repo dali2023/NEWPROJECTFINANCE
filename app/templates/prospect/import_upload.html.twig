@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Importer des prospects{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_prospect_index') }}">Prospects</a> / Importer{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Importer des prospects</h1>
+            <div class="page-head__subtitle">Étape 1 sur 2 — déposez votre liste Excel ou CSV.</div>
+        </div>
+    </div>
+
+    <div class="grid grid--2">
+        <section class="card">
+            <div class="card__header"><div class="card__title">Fichier à importer</div></div>
+            <div class="card__body">
+                {{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+                    {% if form.vars.errors|length > 0 %}
+                        <div class="alert alert--error" role="alert">{{ form_errors(form) }}</div>
+                    {% endif %}
+                    {{ form_row(form.file) }}
+                    <div class="form-actions">
+                        <button class="btn btn--primary" type="submit">Analyser le fichier</button>
+                        <a class="btn btn--ghost" href="{{ path('app_prospect_index') }}">Annuler</a>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Comment ça marche</div></div>
+            <div class="card__body">
+                <ol class="import-steps">
+                    <li><strong>Déposez le fichier.</strong> La première ligne doit contenir les en-têtes de colonnes.</li>
+                    <li><strong>Associez les colonnes.</strong> Aucune correspondance n’est appliquée sans votre validation.</li>
+                    <li><strong>Contrôlez le résultat.</strong> Les lignes invalides sont signalées avec leur numéro.</li>
+                </ol>
+                <div class="divider"></div>
+                <dl class="definition">
+                    <dt>Formats</dt><dd>.xlsx, .xls, .csv</dd>
+                    <dt>Taille maximale</dt><dd>10 Mo</dd>
+                    <dt>Lignes maximales</dt><dd>5 000 lignes de données</dd>
+                    <dt>Doublons</dt><dd>Mise à jour par email, puis par nom + ville</dd>
+                    <dt>Prospects convertis</dt><dd>Ignorés pour préserver les fiches client/projet/contrat</dd>
+                </dl>
+            </div>
+        </section>
+    </div>
+
+    <section class="card" style="margin-top:1rem;">
+        <div class="card__header"><div class="card__title">Colonnes reconnues automatiquement</div></div>
+        <div class="card__body">
+            <p class="muted">Les intitulés suivants sont pré-associés lors de l’étape 2. Vous gardez la possibilité de
+                modifier chaque correspondance.</p>
+            <div class="form-grid">
+                <div><strong>Raison sociale</strong><br><span class="muted">Raison sociale, Société, Entreprise, Nom</span></div>
+                <div><strong>Contact</strong><br><span class="muted">Contact, Contact principal, Interlocuteur</span></div>
+                <div><strong>Email</strong><br><span class="muted">Email, E-mail, Courriel, Adresse email</span></div>
+                <div><strong>Téléphone</strong><br><span class="muted">Téléphone, Tél, Mobile, GSM</span></div>
+                <div><strong>Ville</strong><br><span class="muted">Ville, Localité</span></div>
+                <div><strong>Statut</strong><br><span class="muted">Nouveau, Qualifié, En discussion, Gagné, Perdu</span></div>
+                <div><strong>Montant / probabilité</strong><br><span class="muted">Montant estimé HT, Budget, Probabilité</span></div>
+                <div><strong>Suivi</strong><br><span class="muted">Prochaine action, Date d’action, Commentaires</span></div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

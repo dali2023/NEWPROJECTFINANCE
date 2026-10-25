@@ -1,0 +1,152 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ prospect.name }}{% endblock %}
+{% block breadcrumb %}<a href="{{ path('app_prospect_index') }}">Prospects</a> / {{ prospect.reference }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ prospect.name }}</h1>
+            <div class="page-head__subtitle">
+                <span class="mono">{{ prospect.reference }}</span>
+                <span class="badge {{ prospect.status.badgeClass }}">{{ prospect.status.label }}</span>
+                {% if prospect.owner %}
+                    <span class="muted">Responsable : {{ prospect.owner.fullName }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="page-head__actions">
+            {% include 'partials/_page_actions.html.twig' %}
+            {% if can('prospect.manage') and not prospect.isConverted %}
+                <a class="btn" href="{{ path('app_prospect_edit', {id: prospect.idString}) }}">Modifier</a>
+            {% endif %}
+            {% if prospect.canConvert and can('prospect.convert') and can('client.manage') and can('project.manage') and can('contract.manage') %}
+                <a class="btn btn--primary" href="{{ path('app_prospect_convert', {id: prospect.idString}) }}">Convertir</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if prospect.isConverted %}
+        <div class="alert alert--success" style="margin-bottom:1rem;">
+            Ce prospect a été converti le {{ prospect.convertedAt|date('d/m/Y H:i') }}
+            {% if prospect.convertedBy %}par {{ prospect.convertedBy.fullName }}{% endif %}.
+            Les fiches créées restent accessibles ci-dessous.
+        </div>
+    {% endif %}
+
+    <div class="grid grid--2">
+        <section class="card">
+            <div class="card__header"><div class="card__title">Coordonnées</div></div>
+            <div class="card__body">
+                <dl class="definition">
+                    <dt>Contact principal</dt><dd>{{ prospect.contactName ?: '—' }}</dd>
+                    <dt>Adresse électronique</dt><dd>{{ prospect.email ?: '—' }}</dd>
+                    <dt>Téléphone</dt><dd>{{ prospect.phone ?: '—' }}</dd>
+                    <dt>Adresse</dt>
+                    <dd>
+                        {% if prospect.address %}{{ prospect.address }}<br>{% endif %}
+                        {% if prospect.postalCode or prospect.city %}{{ prospect.postalCode }} {{ prospect.city }}<br>{% endif %}
+                        {{ prospect.country ?: '' }}
+                        {% if not prospect.address and not prospect.city and not prospect.country %}—{% endif %}
+                    </dd>
+                    <dt>Identifiant fiscal</dt><dd>{{ prospect.taxIdentifier ?: '—' }}</dd>
+                </dl>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Qualification</div></div>
+            <div class="card__body">
+                <dl class="definition">
+                    <dt>Statut</dt><dd><span class="badge {{ prospect.status.badgeClass }}">{{ prospect.status.label }}</span></dd>
+                    <dt>Source / origine</dt><dd>{{ prospect.source ?: '—' }}</dd>
+                    <dt>Montant estimé HT</dt><dd>{{ prospect.estimatedAmountHt|money }}</dd>
+                    <dt>Probabilité</dt><dd>{{ prospect.probability is not null ? prospect.probability ~ ' %' : '—' }}</dd>
+                    <dt>Conclusion prévue</dt><dd>{{ prospect.expectedCloseDate ? prospect.expectedCloseDate|date('d/m/Y') : '—' }}</dd>
+                    <dt>Responsable</dt><dd>{{ prospect.owner ? prospect.owner.fullName : '—' }}</dd>
+                    <dt>Créé le</dt><dd>{{ prospect.createdAt ? prospect.createdAt|date('d/m/Y H:i') : '—' }}</dd>
+                    <dt>Dernière modification</dt><dd>{{ prospect.updatedAt ? prospect.updatedAt|date('d/m/Y H:i') : '—' }}</dd>
+                </dl>
+            </div>
+        </section>
+    </div>
+
+    {% if prospect.isConverted %}
+        <section class="card" style="margin-top:1rem;">
+            <div class="card__header"><div class="card__title">Fiches issues de la conversion</div></div>
+            <div class="card__body">
+                <div class="grid grid--3">
+                    <div>
+                        <div class="section-title">Client</div>
+                        {% if prospect.convertedClient %}
+                            <a href="{{ path('app_client_show', {id: prospect.convertedClient.idString}) }}">
+                                {{ prospect.convertedClient.code }} — {{ prospect.convertedClient.name }}
+                            </a>
+                        {% else %}—{% endif %}
+                    </div>
+                    <div>
+                        <div class="section-title">Projet</div>
+                        {% if prospect.convertedProject %}
+                            <a href="{{ path('app_project_show', {id: prospect.convertedProject.idString}) }}">
+                                {{ prospect.convertedProject.code }} — {{ prospect.convertedProject.name }}
+                            </a>
+                        {% else %}—{% endif %}
+                    </div>
+                    <div>
+                        <div class="section-title">Contrat (brouillon)</div>
+                        {% if prospect.convertedContract %}
+                            <a href="{{ path('app_contract_show', {id: prospect.convertedContract.idString}) }}">
+                                {{ prospect.convertedContract.reference }} — {{ prospect.convertedContract.title }}
+                            </a>
+                        {% else %}—{% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% endif %}
+
+    <div class="grid grid--2" style="margin-top:1rem;">
+        <section class="card">
+            <div class="card__header"><div class="card__title">Suivi commercial</div></div>
+            <div class="card__body">
+                <dl class="definition">
+                    <dt>Prochaine action</dt><dd>{{ prospect.nextAction ?: '—' }}</dd>
+                    <dt>Date de la prochaine action</dt><dd>{{ prospect.nextActionDate ? prospect.nextActionDate|date('d/m/Y') : '—' }}</dd>
+                    <dt>Créé par</dt><dd>{{ prospect.createdBy ? prospect.createdBy.fullName : '—' }}</dd>
+                </dl>
+                {% if prospect.notes %}
+                    <div class="divider"></div>
+                    <div class="section-title">Commentaires</div>
+                    <p style="white-space:pre-line;">{{ prospect.notes }}</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card__header"><div class="card__title">Historique</div></div>
+            <div class="card__body">
+                {% if history is empty %}
+                    <div class="placeholder-module">Aucune opération enregistrée.</div>
+                {% else %}
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                            <tr><th>Date</th><th>Action</th><th>Par</th><th>Détail</th></tr>
+                            </thead>
+                            <tbody>
+                            {% for entry in history %}
+                                <tr>
+                                    <td>{{ entry.occurredAt|date('d/m/Y H:i') }}</td>
+                                    <td>{{ entry.action }}</td>
+                                    <td>{{ entry.username ?: 'système' }}</td>
+                                    <td>{{ entry.message ?: '—' }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+{% endblock %}

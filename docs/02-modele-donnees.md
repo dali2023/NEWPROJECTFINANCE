@@ -39,6 +39,17 @@ Implémentation du §5 du cahier des charges v1.0. Cible : **PostgreSQL 16**.
 | `clients` | `id`, `code` UQ, `name`, `client_type` ∈ {`public`, `private`, `association`, `other`}, `tax_identifier`, `address`, `city`, `email`, `phone`, `payment_terms_days`, `is_active`, `notes` | suppression logique uniquement |
 | `suppliers` | `id`, `code` UQ, `name`, `tax_identifier`, `address`, `email`, `phone`, `service_category`, `payment_terms_days`, `is_active` | idem |
 
+### Prospection
+
+| Table | Colonnes | Contraintes |
+|---|---|---|
+| `prospects` | `id`, `reference` UQ, `name`, `contact_name`, `email`, `phone`, `address`, `city`, `postal_code`, `country`, `tax_identifier`, `source`, `status`, `owner_user_id`, `estimated_amount_ht`, `probability`, `expected_close_date`, `next_action`, `next_action_date`, `notes`, `created_at`, `created_by`, `converted_at`, `converted_by`, `converted_client_id`, `converted_project_id`, `converted_contract_id`, `deleted_at` | `status` ∈ {`new`, `qualified`, `in_discussion`, `won`, `converted`, `lost`} ; `probability` ∈ [0, 100] ; import : doublon résolu par email puis (`name`, `city`) ; prospect converti figé |
+
+Un prospect n'est jamais un client : la conversion crée un client, un projet au
+statut **Opportunité** et un contrat **Brouillon** dans une transaction unique,
+puis conserve les trois liens (`converted_*_id`) pour la traçabilité. La
+suppression d'un prospect est logique, comme pour les tiers.
+
 ### Projets et contrats
 
 | Table | Colonnes | Contraintes |
@@ -119,6 +130,7 @@ Implémentation du §5 du cahier des charges v1.0. Cible : **PostgreSQL 16**.
 
 ```
 clients 1---n projects 1---n project_milestones
+prospects 1---0..1 clients ; prospects 1---0..1 projects ; prospects 1---0..1 contracts
 clients 1---n customer_invoices 1---n customer_invoice_allocations n---1 receipts
 projects 1---n receipts
 projects 1---n expenses n---n assets (asset_expenses)
@@ -132,10 +144,10 @@ fiscal_years 1---1 annual_results 1---n profit_distributions 1---n profit_distri
 users n---n roles n---n permissions ; documents / audit_logs = traçabilité transversale
 ```
 
-## État d'implémentation — module 15 et finances
+## État d'implémentation — module 15, finances et prospects
 
 Le modèle cible ci-dessus conserve les noms du cahier des charges. Les tables
-effectivement créées par la migration `Version20261022021317.php` sont :
+effectivement créées par les migrations sont :
 
 | Domaine | Tables livrées |
 |---|---|
@@ -145,11 +157,14 @@ effectivement créées par la migration `Version20261022021317.php` sont :
 | Charges | `expenses`, `expense_payments` |
 | Trésorerie | `bank_accounts`, `cash_movements` |
 | Associés | `partners`, `partner_transactions` |
+| Prospection | `prospects` |
 | Paramétrage | `company_settings`, `mail_settings` (lignes uniques) |
 
 La migration `Version20261022205916.php` ajoute le paramétrage société/email et
 les colonnes de suivi d'envoi sur `contract_notifications`
 (`email_sent_at`, `email_attempts`, `email_last_attempt_at`, `email_error`).
+La migration `Version20261025131414.php` ajoute la table `prospects` et ses
+index de recherche (statut, email, nom + ville, responsable).
 
 Points d'implémentation à retenir :
 

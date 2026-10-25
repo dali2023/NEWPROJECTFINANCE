@@ -1,0 +1,53 @@
+{% if form.vars.errors|length > 0 %}
+    <div class="alert alert--error" role="alert">{{ form_errors(form) }}</div>
+{% endif %}
+
+<section class="card">
+    <div class="card__header"><div class="card__title">Identification</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.name) }}
+            {{ form_row(form.contactName) }}
+            {{ form_row(form.email) }}
+            {{ form_row(form.phone) }}
+            {{ form_row(form.taxIdentifier) }}
+        </div>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1rem;">
+    <div class="card__header"><div class="card__title">Coordonnées</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.address) }}
+            {{ form_row(form.postalCode) }}
+            {{ form_row(form.city) }}
+            {{ form_row(form.country) }}
+        </div>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1rem;">
+    <div class="card__header"><div class="card__title">Qualification commerciale</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.status) }}
+            {{ form_row(form.owner) }}
+            {{ form_row(form.source) }}
+            {{ form_row(form.estimatedAmountHt) }}
+            {{ form_row(form.probability) }}
+            {{ form_row(form.expectedCloseDate) }}
+        </div>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1rem;">
+    <div class="card__header"><div class="card__title">Suivi et commentaires</div></div>
+    <div class="card__body">
+        <div class="form-grid">
+            {{ form_row(form.nextAction) }}
+            {{ form_row(form.nextActionDate) }}
+        </div>
+        {{ form_row(form.notes) }}
+    </div>
+</section>

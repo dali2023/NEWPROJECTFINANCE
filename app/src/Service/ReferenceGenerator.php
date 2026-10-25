@@ -18,6 +18,8 @@ use Doctrine\ORM\EntityManagerInterface;
  */
 final class ReferenceGenerator
 {
+    public const MODULE_CLIENT = 'CLI';
+    public const MODULE_PROSPECT = 'PRO';
     public const MODULE_PROJECT = 'PRJ';
     public const MODULE_CONTRACT = 'CTR';
     public const MODULE_MAINTENANCE = 'MNT';

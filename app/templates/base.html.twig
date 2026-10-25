@@ -42,6 +42,11 @@
                         <span class="nav-link__icon">▤</span> Projets
                     </a>
                 {% endif %}
+                {% if can('prospect.view') %}
+                    <a class="nav-link {{ route starts with 'app_prospect_' ? 'is-active' }}" href="{{ path('app_prospect_index') }}">
+                        <span class="nav-link__icon">◐</span> Prospects
+                    </a>
+                {% endif %}
                 {% if can('client.view') %}
                     <a class="nav-link {{ route starts with 'app_client_' ? 'is-active' }}" href="{{ path('app_client_index') }}">
                         <span class="nav-link__icon">◍</span> Clients
@@ -139,7 +144,7 @@
         </nav>
 
         <div class="sidebar__footer">
-            Version 1.0 · {{ app_currency }} · {{ app_locale|upper }}
+            Version 1.2.0 · {{ app_currency }} · {{ app_locale|upper }}
         </div>
     </aside>
 
