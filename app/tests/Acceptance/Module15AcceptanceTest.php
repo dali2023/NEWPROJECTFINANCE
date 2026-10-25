@@ -263,7 +263,7 @@ final class Module15AcceptanceTest extends DatabaseTestCase
         self::assertStringContainsString('agenda__item--milestone', $agenda);
         self::assertStringContainsString($milestone->getLabel(), $agenda);
 
-        $this->client->request('GET', '/contrats/calendrier?vue=mois&horizon=6');
+        $this->client->request('GET', '/contrats/calendrier?vue=mois&horizon=6&mois='.$milestone->getPlannedDate()->format('Y-m'));
         self::assertResponseIsSuccessful();
         $month = (string) $this->client->getResponse()->getContent();
         self::assertStringContainsString('class="cal-grid"', $month);
